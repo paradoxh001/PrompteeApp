@@ -1,0 +1,624 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>批量生成词工具</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+html{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:15px;color:#1d1d1f;background:#f5f5f7;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column}
+.header{height:48px;min-height:48px;background:#1a1a1e;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid rgba(255,255,255,.06)}
+.header h1{font-size:14px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:.02em}
+.header .badge{font-size:11px;color:rgba(255,255,255,.45);background:rgba(255,255,255,.08);padding:3px 10px;border-radius:6px}
+.header-btn{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:12px;transition:.2s}
+.header-btn:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.1)}
+ .workspace{flex:1;display:flex;min-height:0}
+.panel{overflow:hidden;display:flex;flex-direction:column}
+ .panel-left{overflow:visible;flex:0 0 23%;background:#1a1a1e;border-right:1px solid rgba(255,255,255,.06)}
+ .panel-center{flex:0 0 54%;background:#fff}
+ .panel-right{flex:0 0 23%;background:#f5f5f7;border-left:1px solid #e8e8ed}
+.panel-header{height:44px;min-height:44px;display:flex;align-items:center;padding:0 20px;font-size:13px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid rgba(255,255,255,.06)}
+.panel-left .panel-header{color:rgba(255,255,255,.7)}
+.panel-center .panel-header{color:#6e6e73;border-bottom-color:#e8e8ed}
+.panel-right .panel-header{color:#6e6e73;border-bottom-color:#e8e8ed}
+.panel-body{flex:1;overflow-y:auto;padding:20px}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
+.panel-left .panel-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12)}
+.section{margin-bottom:20px}
+.section:last-child{margin-bottom:0}
+.section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.field-dark{display:flex;flex-direction:column;gap:5px}
+.field-dark label{font-size:12px;font-weight:500;color:rgba(255,255,255,.6)}
+.field-dark input{padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);transition:all .2s;outline:none;width:100%}
+.field-dark input:focus{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08);box-shadow:0 0 0 2px rgba(0,113,227,.3)}
+.field-dark input::placeholder{color:rgba(255,255,255,.25)}
+.field-dark .hint{font-size:11px;color:rgba(255,255,255,.35);line-height:1.4}
+.field-dark .hint strong{color:rgba(255,255,255,.5)}
+.toggle-row-dark{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.toggle-row-dark label{font-size:12px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer}
+.toggle-dark{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+ .toggle-dark input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1}
+.toggle-dark .slider{position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,.15);border-radius:20px;transition:.25s}
+.toggle-dark .slider::before{content:"";position:absolute;height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle-dark input:checked+.slider{background:#34c759}
+.toggle-dark input:checked+.slider::before{transform:translateX(16px)}
+.btn-gen{width:100%;padding:10px;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;border:none;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px}
+.btn-gen.primary{background:#0071e3;color:#fff}
+.btn-gen.primary:hover{background:#0077ed;color:#fff}
+.btn-gen.primary:active{background:#006edb}
+.btn-gen.primary:disabled{background:rgba(0,113,227,.35);cursor:not-allowed;color:rgba(255,255,255,.4)}
+.tpl-btn{padding:4px 14px;border-radius:6px;font-size:11px;font-weight:500;font-family:inherit;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s}.tpl-btn:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}.tpl-btn.active{background:#34c759;border-color:#34c759;color:#fff}.collapsible-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0}
+.collapsible-arrow{color:rgba(255,255,255,.25);transition:transform .25s;font-size:10px;line-height:1}
+.collapsible-arrow.open{transform:rotate(90deg)}
+.collapsible-body{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s;opacity:0}
+.collapsible-body.open{max-height:600px;opacity:1}
+.collapsible-body-inner{padding-top:8px}
+.dropzone{position:relative;border:2px dashed #d2d2d7;border-radius:14px;padding:40px 20px;text-align:center;transition:all .25s;cursor:pointer;background:#fafafa;margin-bottom:16px}
+.dropzone:hover,.dropzone.drag-over{border-color:#0071e3;background:#f0f7ff}
+.dropzone-icon{margin-bottom:10px;color:#c7c7cc}
+.dropzone h3{font-size:15px;font-weight:500;color:#1d1d1f;margin-bottom:2px}
+.dropzone p{font-size:12px;color:#8e8e93}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.image-grid .img-item{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#f0f0f0;border:1px solid #e8e8ed}
+.image-grid .img-item img{width:100%;height:100%;object-fit:cover;display:block}
+.image-grid .img-item .remove-btn{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
+.image-grid .img-item:hover .remove-btn{opacity:1}
+.image-grid .img-item .filename{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);color:#fff;font-size:9px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results-wrapper{flex:1;overflow:auto;min-height:0}
+.results-wrapper::-webkit-scrollbar{width:4px}
+.results-wrapper::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
+.results-table{width:100%;border-collapse:collapse;font-size:12px}
+.results-table th{background:#f5f5f7;color:#6e6e73;font-weight:600;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8ed;font-size:11px;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+.results-table td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top;line-height:1.4}
+.results-table .col-index{width:28px;text-align:center;color:#c7c7cc;font-size:11px}
+.results-table .col-preview{width:44px;padding:6px 8px}
+.results-table .col-preview img{width:36px;height:36px;border-radius:6px;object-fit:cover;display:block;border:1px solid #e8e8ed}
+.results-table .col-result{min-width:160px;max-width:260px}
+.results-table .col-result pre{font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word;font-family:-apple-system,Menlo,Consolas,monospace;background:#fafafa;padding:6px 8px;border-radius:6px;max-height:180px;overflow-y:auto;margin:0}
+.results-table .col-status{width:56px;text-align:center}
+.status-badge{display:inline-block;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:500}
+.status-badge.done{background:#e8f8ee;color:#1a7d36}
+.status-badge.error{background:#fde8e8;color:#c41e3a}
+.status-badge.pending{background:#f0f0f0;color:#8e8e93}
+.status-badge.processing{background:#f0f7ff;color:#0071e3}.btn-gen.danger{background:#ff3b30;color:#fff}.btn-gen.danger:hover{background:#e6352b}.btn-gen.danger:active{background:#cc2e24}.btn-gen-group{display:flex;gap:6px;margin-top:4px}.btn-gen-group .btn-gen{margin-top:0}.field-dark select{padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;width:100%;cursor:pointer}.status-badge.cancelled{background:#f0f0f0;color:#8e8e93}
+.right-footer{padding:12px 20px;border-top:1px solid #e8e8ed;background:#fff;flex-shrink:0}
+.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.progress-bar-container{flex:1;height:3px;background:#e8e8ed;border-radius:2px;overflow:hidden}
+.progress-bar-fill{height:100%;background:#0071e3;border-radius:2px;transition:width .3s ease;width:0}
+.progress-info{font-size:11px;color:#8e8e93;white-space:nowrap}
+.export-actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn-sm{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:500;font-family:inherit;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-sm.outline{background:transparent;color:#0071e3;border:1px solid #0071e3}
+.btn-sm.outline:hover{background:#f0f7ff}
+.btn-sm.secondary{background:#e8e8ed;color:#1d1d1f}
+.btn-sm.secondary:hover{background:#dcdce1}
+.right-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;color:#c7c7cc;padding:40px}
+.right-empty h4{font-size:14px;font-weight:500;color:#8e8e93;margin-bottom:2px}
+.right-empty p{font-size:12px;color:#c7c7cc}
+#toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%)translateY(80px);background:#1d1d1f;color:rgba(255,255,255,.9);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,.25);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:999}
+#toast.show{opacity:1;transform:translateX(-50%)translateY(0)}
+ @media(max-width:768px){.workspace{flex-direction:column}.panel-left,.panel-center,.panel-right{width:100%;min-width:0;border:none}.panel-left{border-bottom:1px solid #e8e8ed}.panel-right{border-top:1px solid #e8e8ed}}
+.count-badge{font-size:11px;color:#8e8e93;margin-left:8px;font-weight:400}.copy-btn{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.06);color:#8e8e93;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;opacity:0;z-index:2}.results-table td:hover .copy-btn{opacity:1}.copy-btn:hover{background:rgba(0,0,0,.08);color:#1d1d1f}.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px}.modal-card{background:#fff;border-radius:16px;width:90%;max-width:800px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:modalIn .25s ease}@keyframes modalIn{from{opacity:0;transform:scale(.95)translateY(10px)}to{opacity:1;transform:scale(1)translateY(0)}}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e8e8ed;flex-shrink:0}.modal-header .title{font-size:14px;font-weight:600;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}.modal-actions{display:flex;gap:6px;flex-shrink:0}.modal-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:500;font-family:inherit;border:none;cursor:pointer;transition:all .2s}.modal-btn.primary{background:#0071e3;color:#fff}.modal-btn.primary:hover{background:#0077ed}.modal-btn.ghost{background:transparent;color:#8e8e93}.modal-btn.ghost:hover{background:rgba(0,0,0,.06);color:#1d1d1f}.modal-body{flex:1;overflow-y:auto;padding:20px;font-size:13px;line-height:1.7;color:#1d1d1f;white-space:pre-wrap;word-break:break-word;font-family:-apple-system,Menlo,Consolas,monospace}.modal-body::-webkit-scrollbar{width:4px}.modal-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
+</style></head><body>
+<header class="header"><div style="display:flex;align-items:center;gap:16px"><h1>批量生成词工具</h1><span class="badge">火山方舟 ARK</span></div><div class="header-actions"><button class="header-btn" id="clearAllBtn">清空</button></div></header>
+<div class="workspace">
+<aside class="panel panel-left"><div class="panel-header">生成词设置</div><div class="panel-body">
+<div class="section"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
+<div class="section"><div class="section-label">提示词模板</div><div style="display:flex;gap:6px;margin-bottom:10px"><button class="tpl-btn" data-tpl="coat" id="tplCoat">上衣</button><button class="tpl-btn" data-tpl="bottoms" id="tplBottoms">下装</button><button class="tpl-btn" data-tpl="shoes" id="tplShoes">鞋类</button><button class="tpl-btn" data-tpl="fullbody" id="tplFullBody">全身</button><button class="tpl-btn" data-tpl="fullbodyShoes" id="tplFullBodyShoes">全身鞋</button><button class="tpl-btn" data-tpl="singleShoe" id="tplSingleShoe">单鞋</button><button class="tpl-btn active" data-tpl="custom" id="tplCustom">自定义</button></div><div id="genWordSection"><div class="field-dark"><input id="genWord" value="上衣：图中的上衣" placeholder="输入产品描述" /><span class="hint">将替换到提示词模板的产品描述位置</span></div></div><textarea id="promptPreview" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.6;color:rgba(255,255,255,.9);width:100%;resize:vertical;min-height:100px;font-family:inherit;white-space:pre-wrap;word-break:break-word"></textarea></div>
+<div class="section" style="padding-top:4px"><button class="btn-gen primary" id="startBtn" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> 开始生成</button></div>
+<div class="section" style="margin-bottom:0;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+<div class="collapsible-header" id="apiToggle"><span class="section-label" style="cursor:pointer">API 配置</span><span class="collapsible-arrow" id="apiArrow">›</span></div>
+<div class="collapsible-body" id="apiBody"><div class="collapsible-body-inner">
+<div class="field-dark" style="margin-bottom:10px"><label>API 地址</label><input id="apiEndpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions" /></div>
+<div class="field-dark" style="margin-bottom:10px"><label>API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint">火山方舟的 API Key</span></div>
+<div class="field-dark" style="margin-bottom:10px"><label>推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
+<div class="toggle-row-dark"><label for="streamToggleDark">流式输出</label><span class="toggle-dark"><input type="checkbox" id="streamToggleDark" /><span class="slider"></span></span></div><div class="toggle-row-dark"><label for="concurrencyLimit">并发数</label><select id="concurrencyLimit" style="width:56px;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+<div class="toggle-row-dark"><label for="compressToggle">图片压缩</label><span class="toggle-dark"><input type="checkbox" id="compressToggle" checked /><span class="slider"></span></span></div>
+<div style="padding-left:4px" id="compressConfig"><div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap">最大边长</span><select id="maxDimension" style="flex:1;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:11px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="768">768px</option><option value="1024" selected>1024px</option><option value="1536">1536px</option><option value="2048">2048px</option></select></div></div>
+</div></div></div></div></aside>
+<main class="panel panel-center"><div class="panel-header">上传图片<span class="count-badge" id="imgCount"></span></div><div class="panel-body" style="display:flex;flex-direction:column">
+<div class="dropzone" id="dropzone"><div class="dropzone-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+<h3>拖入图片或点击选择</h3><p>JPG / PNG / WebP  ·  支持批量</p><input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple /></div>
+<div class="image-grid" id="imageGrid"></div></div></main>
+<aside class="panel panel-right"><div class="panel-header">生成结果<span class="count-badge" id="resultCount"></span></div>
+<div class="results-wrapper" id="resultsWrapper"><div class="right-empty" id="emptyResults"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+<h4>暂无结果</h4><p>上传图片后点击“开始生成”</p></div>
+<table class="results-table" id="resultsTable" style="display:none"><thead><tr><th class="col-index">#</th><th class="col-preview"></th><th>文件名</th><th class="col-result">结果</th><th class="col-status">状态</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+<div class="right-footer" id="rightFooter" style="display:none">
+<div class="progress-row" id="progressRow"><div class="progress-bar-container"><div class="progress-bar-fill" id="progressFill"></div></div><span class="progress-info" id="progressInfo"></span></div><div class="btn-gen-group" id="cancelBtnGroup" style="display:none"><button class="btn-gen danger" id="cancelBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 停止</button></div><div class="export-actions"><button class="btn-sm outline" id="exportCsvBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
+<button class="btn-sm outline" id="exportExcelBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Excel</button>
+<button class="btn-sm secondary" id="clearResultsBtn">清空</button></div></div></aside></div>
+<div id="toast"></div>
+<textarea id="coatPromptData" style="display:none"># 任务目标
+作为 AI 图像重建专家，分析输入图片并输出【完整中文 JSON】，用于后续 AI 换装。忽略原图中的上衣，仅依据其余元素分析，最大程度确保换装后的人物、场景、镜头和视觉一致，并**隐性优化人物身材比例**。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原图上衣的颜色与视觉特征，上衣字段固定输出为："图中的上衣"。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "人物": {
+    "基本特征": "人数、主次、种族、性别、年龄、体型、肤色、面部轮廓、五官",
+    "发型发色": "发型、发色",
+    "神态气质": "表情、神态、整体气质",
+    "皮肤状态": "如无特殊特征，必须统一输出：无纹身、无身体彩绘、无明显疤痕、无明显胎记、无穿孔装饰，皮肤自然干净"
+  },
+  "服装": {
+    "上衣": "图中的上衣",
+    "其他服饰": "除上衣外的裤/裙、鞋袜、帽子、包袋。**分析下半身时，重点强调高腰线、拉长腿部线条的视觉延伸感，以及整体服饰的修长干练风格**"
+  },
+  "动作姿态": {
+    "身体朝向": "身体、头部及视线方向",
+    "肢体细节": "肩部、双臂、手部、双腿、脚部姿势。**通过重心微侧、单腿微张或灵动姿态，打破死板的对称站姿，营造高挑的身材舒展感**"
+  },
+  "场景环境": {
+    "环境类型": "场景类型、具体地点",
+    "空间层次": "前中后景元素及主体与背景的位置关系"
+  },
+  "构图与镜头": {
+    "画面布局": "人物相对位置、主体占比。**利用仰视视角的透视关系，使视觉重心略微上移，自然拉长下半身比例（不含画幅比例/尺寸）**",
+    "镜头语言": "景别、拍摄角度（**倾向于轻微低机位仰拍以优化人物身材比例**）、机位高度、焦距倾向、透视、背景虚化与清晰度"
+  },
+  "光影与色彩": {
+    "光影氛围": "光源类型、方向、软硬度、高光/阴影位置",
+    "色彩风格": "主色/辅助色（不含上衣）、冷暖、饱和度、明暗对比、摄影风格"
+  },
+  "产品展示": {
+    "展示状态": "产品（除上衣外）露出面积、展示角度、受光情况及视觉权重"
+  },
+  "生成约束": "保持主体位置、主体大小、拍摄机位和视觉重心一致；人物皮肤保持自然洁净，禁止生成纹身；禁止新增或删除人物，禁止改变人物身份、拍摄视角、场景类型和整体氛围；**注重人物身材比例的优雅与修长感，避免呆板的正视图和五五分比例**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定上衣，其余视觉信息保持一致。"
+}</textarea>
+<textarea id='bottomsPromptData' style='display:none'># 任务目标
+作为 AI 图像重建专家，分析输入图片并输出【完整中文 JSON】，用于后续 AI 换装。忽略原图中的下装，仅依据其余元素分析，最大程度确保换装后的人物、场景、镜头和视觉一致，并确保新下装产品得到最完美的视觉展示。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原图下装的颜色与视觉特征，下装字段固定输出为："图中的下装"。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "人物": {
+    "基本特征": "人数、主次、种族、性别、年龄、体型、肤色、面部轮廓、五官",
+    "发型发色": "发型、发色",
+    "神态气质": "表情、神态、整体气质",
+    "皮肤状态": "如无特殊特征，必须统一输出：无纹身、无身体彩绘、无明显疤痕、无明显胎记、无穿孔装饰，皮肤自然干净"
+  },
+  "服装": {
+    "上衣内搭": "完整描述原图上衣、外套、内搭的颜色、材质、版型、长度、纹理及整体风格",
+    "下装": "图中的下装",
+    "其他服饰": "除下装外的鞋袜、帽子、包袋、饰品配件的颜色、材质与风格"
+  },
+  "动作姿态": {
+    "身体朝向": "身体、头部及视线方向",
+    "肢体细节": "肩部、双臂、手部、双腿、脚部姿势。**重点分析下半身姿态是否舒展、是否有遮挡，确保下装的版型、剪裁与廓形能够完整、无死角地呈现出来**"
+  },
+  "场景环境": {
+    "环境类型": "场景类型、具体地点",
+    "空间层次": "前中后景元素（地面、建筑、植物、道具等）及主体与背景的位置关系"
+  },
+  "构图与镜头": {
+    "画面布局": "人物相对位置、主体占比、留白、视觉重心及前中后景层次，**确保下半身画面有足够的展示空间，不因构图或裁剪导致下装显示不全（不含画幅比例/尺寸）**",
+    "镜头语言": "景别、拍摄角度、机位高度、焦距倾向、透视、背景虚化程度与主体清晰度"
+  },
+  "光影与色彩": {
+    "光影氛围": "光源类型、方向、软硬度、高光/阴影位置，**重点注意下半身的受光情况，确保光照能够清晰烘托出下装的材质面料与色彩细节**",
+    "色彩风格": "主色/辅助色（不含下装）、冷暖、饱和度、明暗对比、摄影风格与质感"
+  },
+  "产品展示": {
+    "展示状态": "下装在画面中的整体露出面积、展示角度（正面/侧面/背面）、可见程度、受光情况及在画面中的视觉权重"
+  },
+  "生成约束": "保持主体位置、主体大小、拍摄机位和视觉重心一致；人物皮肤保持自然洁净，禁止生成纹身；禁止新增或删除人物，禁止改变人物身份、拍摄视角、场景类型和整体氛围；**以商拍产品展示为核心，确保下装无遮挡、版型舒展、细节清晰且受光均匀**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定下装，其余视觉信息保持一致。"
+}</textarea>
+<textarea id='shoesPromptData' style='display:none'># 任务目标
+作为 AI 图像重建专家，分析输入图片并输出【完整中文 JSON】，用于后续 AI 换装。忽略原图中的鞋子，仅依据其余元素分析，最大程度确保换装后的人物、场景、镜头和视觉一致，并确保新鞋履产品得到最完美的视觉展示。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原图鞋子的颜色与视觉特征，鞋子字段固定输出为："图中的鞋子"。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "人物": {
+    "基本特征": "人数、主次、种族、性别、年龄、体型、肤色、面部轮廓、五官",
+    "发型发色": "发型、发色",
+    "神态气质": "表情、神态、整体气质",
+    "皮肤状态": "如无特殊特征，必须统一输出：无纹身、无身体彩绘、无明显疤痕、无明显胎记、无穿孔装饰，皮肤自然干净"
+  },
+  "服装": {
+    "上衣下装": "完整描述原图上衣、外套、裤子或裙子的颜色、材质、版型、长度、纹理与风格",
+    "鞋子": "图中的鞋子",
+    "其他服饰": "除鞋子外的袜子、帽子、包袋、饰品配件，特别说明袜子与鞋履衔接处的细节"
+  },
+  "动作姿态": {
+    "身体朝向": "身体、头部及视线方向",
+    "肢体细节": "肩部、双臂、手部、双腿、脚部姿势。**准确捕捉双脚的站立或动态角度（如侧向、正向、迈步等），确保鞋履不被草丛、道具或裤脚不当遮挡，完美展现鞋款轮廓**"
+  },
+  "场景环境": {
+    "环境类型": "场景类型、具体地点",
+    "空间层次": "前中后景元素，**特别是地面的材质、纹理、道具以及双脚落地的具体环境，确保其不遮挡鞋履的展示**"
+  },
+  "构图与镜头": {
+    "画面布局": "人物相对位置、主体占比、留白、视觉重心及前中后景层次，**确保脚部区域在画面中有明确的露出和视觉焦点（不含画幅比例/尺寸）**",
+    "镜头语言": "景别（多为全身或带有脚部特写的镜头）、拍摄角度、机位高度、焦距倾向、透视、背景虚化程度与主体清晰度"
+  },
+  "光影与色彩": {
+    "光影氛围": "光源类型、方向、软硬度、高光/阴影位置，**重点注意脚部和地面的受光情况，确保光线充足，能清晰呈现鞋子的材质、科技细节或皮革质感**",
+    "色彩风格": "主色/辅助色（不含鞋子）、冷暖、饱和度、明暗对比、摄影风格与质感"
+  },
+  "产品展示": {
+    "展示状态": "鞋履在画面中的露出面积、展示角度（侧面线条/鞋头正面/鞋跟）、可见程度、受光情况及在画面中的视觉权重"
+  },
+  "生成约束": "保持主体位置、主体大小、拍摄机位和视觉重心一致；人物皮肤保持自然洁净，禁止生成纹身；禁止新增或删除人物，禁止改变人物身份、拍摄视角、场景类型和整体氛围；**以商拍产品展示为核心，确保鞋履无任何道具或环境遮挡，鞋款形态舒展、侧面或关键设计点清晰露出且受光良好**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定鞋子，其余视觉信息保持一致。"
+}</textarea>
+<textarea id="fullbodyPromptData" style="display:none"># 任务目标
+作为 AI 图像重建专家，分析输入图片并输出【完整中文 JSON】，用于后续【全身衣服替换（上装/下装/鞋类）】。全面忽略原图中的所有服装、鞋履及随身包袋，仅依据人物原生特征与场景元素进行分析，最大程度确保换装后的人物、场景、镜头和视觉一致，同时确保全新全身商品获得最大化、最高清、无遮挡的商业级视觉呈现。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原图中所有的上衣、下装（裤/裙）、鞋履及包袋的颜色与视觉特征。各服装字段固定输出为指定默认文本。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "人物": {
+    "基本特征": "人数、主次、种族、性别、年龄、体型、肤色、面部轮廓、五官",
+    "发型发色": "发型、发色",
+    "神态气质": "表情、神态、整体气质",
+    "皮肤状态": "如无特殊特征，必须统一输出：无纹身、无身体彩绘、无明显疤痕、无明显胎记、无穿孔装饰，皮肤自然干净"
+  },
+  "待替换服装": {
+    "上装": "图中的上装",
+    "下装": "图中的下装",
+    "鞋类": "图中的鞋类",
+    "其他可见配件": "仅描述帽子、眼镜、首饰等非衣物配件（需严格忽略原图中的包袋与衣服配件）"
+  },
+  "动作姿态": {
+    "身体朝向": "身体、头部及视线方向",
+    "肢体细节": "肩部、双臂、手部、双腿、脚部姿势。通过重心微侧、单腿微张或灵动姿态，打破死板对称，营造高挑修长的身材舒展感。肢体动作需自然，严禁遮挡身体及全身衣物核心展示区域"
+  },
+  "场景环境": {
+    "环境类型": "场景类型、具体地点",
+    "空间层次": "前中后景元素（地面、建筑、植物、道具等）及主体与背景的位置关系，确保地面清晰以利于鞋类展示"
+  },
+  "构图与镜头": {
+    "画面布局": "人物相对位置、主体占比。利用仰视视角的透视关系，自然拉长全身比例。视觉重心平衡分布于全身衣物与鞋履区域，确保整体位于黄金构图位，无前景遮挡（不含画幅比例/尺寸）",
+    "镜头语言": "景别（通常需确保全身或大半身可见）、拍摄角度（倾向于轻微低机位仰拍以优化身材比例）、机位高度、焦距倾向、透视、背景虚化与清晰度。镜头焦点和画质锐度必须绝对锁定在人物全身区域，呈现极致的面料材质纹理与剪裁细节"
+  },
+  "光影与色彩": {
+    "光影氛围": "光源类型、方向、软硬度、高光/阴影位置。主光源需充分且均匀地覆盖人物全身，突出全身衣物的立体廓形与质感，避免核心区域出现死黑阴影或过度曝光",
+    "色彩风格": "主色/辅助色（必须严格剔除原图中所有衣服、裤子、鞋子的颜色）、冷暖、饱和度、明暗对比、摄影风格与质感"
+  },
+  "产品展示": {
+    "展示状态": "人物全身的有效视觉露出面积、展示角度、受光情况。对于未来替换的全身新商品（上装、下装、鞋类），必须提供最大化的有效视觉展示空间，以商业广告级的标准，完美、清晰、直观地展现全套搭配的版型、设计元素与面料纹理"
+  },
+  "生成约束": "保持主体位置、主体大小、拍摄机位和视觉重心一致；人物皮肤保持自然洁净，禁止生成纹身；禁止新增或删除人物，禁止改变人物身份、拍摄视角、场景类型和整体氛围；注重人物身材比例的优雅与修长感，避免呆板的正视图和五五分比例；**强制约束：最终生成的全身换装图像中，全新替换的商品（上装、下装、鞋类）为绝对的视觉核心，必须确保全身衣物与鞋履展示面积最大化、细节高清锐利、无任何肢体或道具遮挡，完美呈现全套服装的商业穿搭与落地效果**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定的全身衣物与鞋类，其余视觉信息保持一致。"
+}</textarea>
+<textarea id="fullbodyShoesPromptData" style="display:none"># 任务目标
+作为 AI 图像重建专家，分析输入图片并输出【完整中文 JSON】，用于全套服饰与鞋履的重新生成。严格忽略原图中的上衣、下装和鞋子，最大程度确保换装后的人物身份、核心姿态与场景绝对一致，并**通过镜头与动作重构，确保新鞋履商品得到最完美的视觉聚焦与展示**。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原服饰的颜色与视觉特征，服装与鞋履字段严格固定输出为指定文本。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "人物": {
+    "基本特征": "人数、主次、种族、性别、年龄、体型、肤色、面部轮廓、五官",
+    "发型发色": "发型、发色",
+    "神态气质": "表情、神态、整体气质（如时尚、运动、潮流、干练）",
+    "皮肤状态": "如无特殊特征，必须统一输出：无纹身、无身体彩绘、无明显疤痕、无明显胎记、无穿孔装饰，皮肤自然干净"
+  },
+  "服装与商品": {
+    "上衣": "图中的上衣",
+    "下装": "图中的下装",
+    "鞋子": "图中的鞋子",
+    "其他配饰": "除上衣、下装、鞋子外的可见配件（如帽子、包袋、饰品、以及直接衔接鞋履的袜子颜色与材质）"
+  },
+  "动作姿态": {
+    "身体朝向": "身体轴线朝向、头部及视线方向",
+    "肢体细节": "双臂摆放、双腿与脚部的具体姿势（如站立、迈步、靠坐、交叠等）。**重点描述双脚的延伸姿态，确保脚部关节舒展，服饰下摆（如裤脚、裙摆）不当遮挡鞋帮，最大化露出鞋履的完整廓形**"
+  },
+  "场景环境": {
+    "环境类型": "具体场景、地点（如街头、室内、摄影棚、外景等）",
+    "空间层次": "前景、中景人物、背景元素的透视空间关系，**特别注意双脚落地处及周围环境，确保干净无杂物遮挡鞋履**"
+  },
+  "构图与镜头": {
+    "画面布局": "人物在画面中的相对位置。**利用构图引导线将视觉重心引向脚部区域，确保全套服饰呈现良好的穿搭层次，而鞋履区域在画面中拥有明确的视觉比重与留白（不含画幅比例/尺寸）**",
+    "镜头语言": "景别（通常为展现全身或大半身的镜头）、拍摄角度（**倾向于采用能够产生纵深透视的中低机位，使鞋子在画面中具有自然的放大与聚焦效果**）、焦距倾向、背景虚化程度、主体及鞋履区域的极高清晰度"
+  },
+  "光影与色彩": {
+    "光影氛围": "光源类型、光照方向、高光/明暗阴影。**必须保证脚部与鞋履区域受光充足且均匀，能清晰烘托出鞋子的材质面料、科技线条与精细质感**",
+    "色彩风格": "除上衣/下装/鞋子外的环境及配件主色/辅助色、冷暖调、明暗对比与整体画面质感"
+  },
+  "产品展示": {
+    "展示状态": "全套穿搭在画面中的视觉权重划分。**鞋履作为核心产品展示位，其在画面中的完美露出面积、面向镜头的黄金展示角度（如侧前方、侧面等）以及第一视觉吸引力**"
+  },
+  "生成约束": "保持主体位置、主体大小、拍摄机位和视觉重心一致；人物皮肤保持自然洁净，禁止生成纹身；禁止新增或删除人物，禁止改变人物身份、拍摄视角、场景类型和整体氛围；**以鞋履商拍的产品展示为最高核心，不论人物采用何种姿态（站、坐、走等），均须确保新鞋子形态舒展、无任何衣物或环境道具遮挡、完美展现鞋款的轮廓线条与材质细节，且新上衣、新下装、新鞋子之间穿搭层次和谐**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定上衣、下装和鞋子，其余视觉信息保持一致。"
+}</textarea>
+<textarea id="singleShoePromptData" style="display:none"># 任务目标
+作为 AI 图像重建专家，针对【无人物的纯鞋履商拍/陈列图】进行深度场景分析，输出【完整中文 JSON】用于后续鞋履替换。严格忽略原图鞋子本身的颜色与设计，**将最大权重放在场景环境、陈列道具、空间材质及光影氛围的极细致重建上**，确保换鞋后场景细节绝对一致。
+
+# 核心限制
+1. 仅输出合法 JSON 源码，禁止任何 Markdown 包裹（如 ```json）、解释或注释。
+2. 全文使用客观中文。不描述画幅比例、尺寸或分辨率。
+3. 严格忽略原鞋子的颜色与特征，鞋子字段固定输出为："图中的鞋子"。
+
+# 严格按照以下 JSON 格式和字段输出：
+{
+  "场景环境（核心）": {
+    "环境类型": "具体陈列空间或背景类型（如极简摄影棚、现代建筑天台、黄昏山石荒漠、都市街头水洼、轻奢大理石室内等）",
+    "承载面材质": "鞋子放置的具体表面细节（如粗糙岩石纹理、拉丝金属台面、带有倒影的水滑地面、微距沙粒等材质与反光度）",
+    "背景与远景": "背景墙面、建筑线条、天空状态、自然植被或远景建筑的具体形态与远近透视关系"
+  },
+  "陈列道具与空间层次": {
+    "前景元素": "位于镜头最前端、可能产生局部虚化的道具或环境元素（如前景的植物叶片、零散碎石、光斑等）",
+    "中景陈列": "与鞋子并置或环绕鞋子的核心道具（如几何展托、特定工业道具、装饰性摆件等）及其摆放位置",
+    "纵深空间关系": "前景道具、中景展台、主体鞋履与远端背景之间的前后层叠与遮挡关系，形成极强的立体纵深感"
+  },
+  "光影氛围与质感": {
+    "光源与方向": "光源类型（如自然日光、舞台聚光灯、侧逆向柔光）、光照方向以及光线的软硬程度",
+    "高光与明暗面": "道具和场景表面所呈现的高光轮廓线、明暗交界线，以及由于光照产生的整体冷暖调、环境色漫反射",
+    "阴影与投影": "道具的阴影表现。**极细腻地分析鞋子与接触面相交处的物理阴影、环境闭塞阴影（AO）及投影的虚实延伸，确保重生成时完美贴合**"
+  },
+  "镜头语言与构图": {
+    "构图布局": "场景中的几何线条引导、对角线透视、对称性或黄金分割关系，场景元素在画面中的留白比例（不含画幅比例/尺寸）",
+    "镜头参数倾向": "景别（特写/近景/大景深）、拍摄角度（平视、俯视、斜下仰视）、焦距倾向（如广角张力或长焦微距压缩感）、景深虚化层次（背景虚化程度）"
+  },
+  "色彩风格": {
+    "主色与环境色": "整个场景、道具及天空/墙面的主色调、辅助色，不包含原鞋子颜色",
+    "质感与摄影风格": "画面整体呈现的摄影质感（如复古胶片感、冷冽工业风、高级商拍现代极简、自然电影感等）"
+  },
+  "主体商品（占位）": {
+    "鞋子状态": "图中的鞋子。仅客观描述其两只鞋的摆放方向（如左鞋侧面对着镜头，右鞋斜向摆放）、相对间距与在场景中的空间坐标"
+  },
+  "生成约束": "**以极致的场景还原为最高核心**；必须保持原图场景的类型、展台台面材质、所有陈列道具的形态与摆放位置绝对一致；严格保持镜头机位、焦距透视、光影氛围及所有场景色调、阴影走向和高光质感完全相同；**确保替换的新鞋子完美融入该特定场景中，鞋底形态自然贴合承载面，与场景道具无缝衔接且投影绝对真实，严禁改变场景的任何视觉信息**；最终图片可根据生成需求自由适配任意画幅比例，但应保持原图的视觉关系和主体布局，仅允许替换指定鞋子，其余视觉信息保持一致。"
+}</textarea>
+
+<div class="modal-overlay" id="modalOverlay"><div class="modal-card"><div class="modal-header"><span class="title" id="modalTitle"></span><div class="modal-actions"><button class="modal-btn primary" onclick="copyModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 复制</button><button class="modal-btn ghost" onclick="closeModal()">✕</button></div></div><div class="modal-body" id="modalBody"></div></div></div>
+<script>
+
+var currentModel;try{currentModel=localStorage.getItem("ark_model_type");}catch(e){}currentModel=currentModel||"doubao-seed-2.1-turbo";
+try{var modelConfig={
+  "doubao-vision-pro-32k":{label:"Doubao-vision-pro-32k",endpointKey:"ark_ep_vp32k",endpointDefault:"ep-20260706162916-cwsp4",maxTokens:12288,timeout:60000},
+  "doubao-seed-2.1-turbo":{label:"Seed2.1 Turbo",endpointKey:"ark_ep_seed21t",endpointDefault:"ep-20260708192217-zfkkf",maxTokens:8192,timeout:45000,thinkingTypeDisabled:true},
+  "doubao-seed-2.1-pro":{label:"Doubao Seed 2.1 Pro",endpointKey:"ark_ep_seed21",endpointDefault:"ep-20260707145037-qbhn8",maxTokens:4500,timeout:120000,thinkingTypeDisabled:true}
+};}catch(e){}
+
+var state={images:[],results:[],processing:false};
+var $=function(s){return document.querySelector(s);};
+var dropzone=$("#dropzone"),fileInput=$("#fileInput"),imageGrid=$("#imageGrid");
+var genWordInput=$("#genWord"),startBtn=$("#startBtn"),promptPreview=$("#promptPreview");
+var genWordInput=$("#genWord"),startBtn=$("#startBtn"),promptPreview=$("#promptPreview");
+var apiEndpoint=$("#apiEndpoint"),apiKey=$("#apiKey"),modelName=$("#modelName"),streamToggle=$("#streamToggleDark"),compressToggle=$("#compressToggle"),maxDimension=$("#maxDimension");
+var rightFooter=$("#rightFooter"),progressFill=$("#progressFill"),progressInfo=$("#progressInfo");
+var exportCsvBtn=$("#exportCsvBtn"),exportExcelBtn=$("#exportExcelBtn"),clearResultsBtn=$("#clearResultsBtn");
+var imgCount=$("#imgCount"),resultCount=$("#resultCount"),toast=$("#toast"),clearAllBtn=$("#clearAllBtn");
+var tt=null;
+function st(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove("show");},2500);}
+var apiToggle=$("#apiToggle"),apiBody=$("#apiBody"),apiArrow=$("#apiArrow");
+apiToggle.addEventListener("click",function(){apiBody.classList.toggle("open");apiArrow.classList.toggle("open");});
+if(!apiKey.value.trim()){apiBody.classList.add("open");apiArrow.classList.add("open");}
+function updPrompt(){
+  var w=genWordInput.value.trim()||"上衣：图中的上衣";
+  promptPreview.value="请用JSON格式详细描述这幅图。\n要求：\n1. 保留人物种族、性别、年龄、外貌特征、无纹身，动作、表情、姿态\n2. 保留场景环境\n3. 保留构图方式\n4. 保留镜头语言\n5. 保留光影氛围\n6. 保留色彩风格\n但不要描述人物当前上衣穿着的服装。请将服装上衣的描述替换为以下产品：\n\u0022"+w+"\u0022\n输出完整中文版JSON。";
+}
+var currentTpl="custom";var COAT_PROMPT=document.getElementById("coatPromptData").value
+ var tplCustom=$("#tplCustom"),tplCoat=$("#tplCoat"),tplBottoms=$("#tplBottoms"),tplShoes=$("#tplShoes"),tplFullBody=$("#tplFullBody"),tplFullBodyShoes=$("#tplFullBodyShoes"),tplSingleShoe=$("#tplSingleShoe"),genWordSection=$("#genWordSection");
+tplCustom.addEventListener("click",function(){currentTpl="custom";tplCustom.classList.add("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value="";promptPreview.focus();});
+tplCoat.addEventListener("click",function(){currentTpl="coat";tplCoat.classList.add("active");tplCustom.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=COAT_PROMPT;});
+tplBottoms.addEventListener("click",function(){currentTpl="bottoms";tplBottoms.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("bottomsPromptData").value;});
+tplShoes.addEventListener("click",function(){currentTpl="shoes";tplShoes.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("shoesPromptData").value;});
+tplFullBody.addEventListener("click",function(){currentTpl="fullbody";tplFullBody.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyPromptData").value;});
+tplFullBodyShoes.addEventListener("click",function(){currentTpl="fullbodyShoes";tplFullBodyShoes.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyShoesPromptData").value;});
+tplSingleShoe.addEventListener("click",function(){currentTpl="singleShoe";tplSingleShoe.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("singleShoePromptData").value;});
+genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",function(){try{localStorage.setItem("ark_api_key",apiKey.value);}catch(e){}});apiEndpoint.addEventListener("input",function(){try{localStorage.setItem("ark_endpoint",apiEndpoint.value);}catch(e){}});modelName.addEventListener("input",function(){try{var k=modelConfig[currentModel].endpointKey;localStorage.setItem(k,modelName.value);}catch(e){}});compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();
+function hf(files){
+  var al=["image/jpeg","image/png","image/webp"];
+  var ad=0;
+  for(var fi=0;fi<files.length;fi++){
+    var f=files[fi];
+    if(!al.includes(f.type))continue;
+    var dup=false;
+    for(var si=0;si<state.images.length;si++){if(state.images[si].file.name===f.name&&state.images[si].file.size===f.size){dup=true;break;}}
+    if(dup)continue;
+    var id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var r=new FileReader();
+    (function(cid,cf,cn){r.onload=function(ev){processImage(ev,cid,cf,cn);};})(id,f,f.name);
+    r.readAsDataURL(f);ad++;
+  }
+  if(ad)st("已添加 "+ad+" 张图片");
+}
+
+function processImage(ev,cid,cf,cn){
+  var du=ev.target.result;
+  if(!document.getElementById("compressToggle").checked){state.images.push({id:cid,file:cf,dataUrl:du,name:cn});renderGrid();ui();return;}
+  var m=parseInt(document.getElementById("maxDimension").value)||1024;
+  var img=new Image();
+  img.onload=function(){
+    var w=img.width,h=img.height;
+    if(m>0&&(w>m||h>m)){var r=Math.min(m/w,m/h);w=Math.round(w*r);h=Math.round(h*r);}
+    var c=document.createElement("canvas");c.width=w;c.height=h;
+    c.getContext("2d").drawImage(img,0,0,w,h);
+    state.images.push({id:cid,file:cf,dataUrl:c.toDataURL("image/jpeg",0.85),name:cn});renderGrid();ui();
+  };
+  img.onerror=function(){state.images.push({id:cid,file:cf,dataUrl:du,name:cn});renderGrid();ui();};
+  img.src=du;
+}
+dropzone.addEventListener("dragover",function(e){e.preventDefault();dropzone.classList.add("drag-over");});
+dropzone.addEventListener("dragleave",function(){dropzone.classList.remove("drag-over");});
+dropzone.addEventListener("drop",function(e){e.preventDefault();dropzone.classList.remove("drag-over");hf(e.dataTransfer.files);});
+fileInput.addEventListener("change",function(){hf(fileInput.files);fileInput.value="";});
+function renderGrid(){
+  if(state.images.length){
+    var h="";
+    for(var i=0;i<state.images.length;i++){var img=state.images[i];h+='<div class="img-item" data-id="'+img.id+'"><img src="'+img.dataUrl+'" alt="'+img.name+'" /><button class="remove-btn" data-id="'+img.id+'">\u2715</button><span class="filename">'+eh(img.name)+'</span></div>';}
+    imageGrid.innerHTML=h;
+    var btns=imageGrid.querySelectorAll(".remove-btn");
+    for(var j=0;j<btns.length;j++){btns[j].addEventListener("click",function(){rm(this.dataset.id);});}
+  } else {imageGrid.innerHTML="";}
+}
+function rm(id){
+  var t1=[];for(var i=0;i<state.images.length;i++){if(state.images[i].id!==id)t1.push(state.images[i]);}state.images=t1;
+  var t2=[];for(var j=0;j<state.results.length;j++){if(state.results[j].id!==id)t2.push(state.results[j]);}state.results=t2;
+  renderGrid();ui();try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(ex){}try{var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;}catch(ex){}renderResults();
+}
+function ui(){
+  startBtn.disabled=state.images.length===0||state.processing;
+  imgCount.textContent=state.images.length?"\u00b7 "+state.images.length+" \u5f20":"";
+  var d=0,e=0;
+  for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done")d++;if(state.results[i].status==="error")e++;}
+  resultCount.textContent=state.results.length?"\u00b7 "+state.results.length+(d?" \u00b7 "+d+" \u2713":"")+(e?" \u00b7 "+e+" \u2717":""):"";
+}
+function buildPrompt(w){if(currentTpl==="coat"){return COAT_PROMPT;}if(currentTpl==="bottoms"){return document.getElementById("bottomsPromptData").value;}if(currentTpl==="shoes"){return document.getElementById("shoesPromptData").value;}if(currentTpl==="fullbody"){return document.getElementById("fullbodyPromptData").value;}if(currentTpl==="fullbodyShoes"){return document.getElementById("fullbodyShoesPromptData").value;if(currentTpl==="singleShoe"){return document.getElementById("singleShoePromptData").value};}return promptPreview.value;}
+var RETRY_CONFIG={maxRetries:3,baseDelay:1000,maxDelay:16000};var cancelRequested=false;var activeControllers=[];
+function pae(st,bd,mv){
+  var ec=bd?.error?.code||"",em=bd?.error?.message||"";
+  if(st===401)return"鉴权失败（401）：请检查 ARK_API_KEY 是否正确或已过期";
+  if(st===403)return"权限不足（403）：当前 API Key 没有访问该模型的权限";
+  if(st===404||ec==="InvalidEndpointOrModel.NotFound"||ec==="EndpointNotFound")return"推理接入点不存在（404）：请确认 ep-xxx 接入点 ID 是否正确。\n  当前值: "+document.getElementById("modelName").value+"\n  提示：在火山方舟后台为当前模型创建推理接入点后，使用自动生成的 ep-xxx ID";
+  if(em)return"API 错误 ("+ec+"): "+em;
+  return"请求失败 (HTTP "+st+")";
+}
+async function callAPI(du,prompt,us){
+  var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
+  if(window.location.protocol==="http:"&&ep.includes("ark.cn-beijing.volces.com")){ep="/api/chat";}
+  if(!ep||!key||!model)throw new Error("请先完善 API 配置");
+  var cfg=modelConfig[currentModel];
+  var to=cfg.timeout;
+  var mt=cfg.maxTokens;
+  var body={model:model,messages:[{role:"user",content:[{type:"text",text:prompt},{type:"image_url",image_url:{url:du,detail:"high"}}]}],max_tokens:mt,temperature:0.3,stream:us};
+  if(ep==="/api/chat"){body.api_key=key;}if(cfg.thinkingTypeDisabled){body.thinking_type="disabled";}
+  var le=null;
+  for(var a=0;a<=RETRY_CONFIG.maxRetries;a++){
+    if(cancelRequested)throw new Error("已取消");
+    if(a>0){
+      var delay=Math.min(RETRY_CONFIG.baseDelay*Math.pow(2,a-1),RETRY_CONFIG.maxDelay);
+      delay+=Math.random()*500;
+      await new Promise(function(r){setTimeout(r,delay);});
+      if(cancelRequested)throw new Error("已取消");
+    }
+    var c=new AbortController();
+    activeControllers.push(c);
+    var t=setTimeout(function(){c.abort();},to);
+    try{
+      var fetchHeaders={"Content-Type":"application/json"};
+      if(ep!=="/api/chat"){fetchHeaders["Authorization"]="Bearer "+key;}
+      var resp=await fetch(ep,{method:"POST",headers:fetchHeaders,body:JSON.stringify(body),signal:c.signal});
+      clearTimeout(t);
+      activeControllers=activeControllers.filter(function(ac){return ac!==c;});
+      if(!resp.ok){
+        var eb=null;try{eb=await resp.json();}catch(e){}
+        var m=pae(resp.status,eb,model);
+        if(resp.status===401||resp.status===403||resp.status===404)throw new Error(m);
+        if(resp.status===429){
+          var retryAfter=parseInt(resp.headers.get("Retry-After"))||5;
+          le=new Error("请求频率过高（429），"+retryAfter+"s 后重试");
+          await new Promise(function(r){setTimeout(r,retryAfter*1000);});
+          continue;
+        }
+        le=new Error(m);continue;
+      }
+      if(us)return await rs(resp);
+      var data=await resp.json();
+      var cnt=data.choices?.[0]?.message?.content;
+      if(!cnt)throw new Error("API 返回异常");return cnt;
+    }catch(err){
+      clearTimeout(t);
+      activeControllers=activeControllers.filter(function(ac){return ac!==c;});
+      if(cancelRequested)throw new Error("已取消");
+      if(err.name==="AbortError"){le=new Error("请求超时（"+to/1000+"s）");continue;}
+      if(err.message&&(err.message.includes("鉴权")||err.message.includes("权限")||err.message.includes("推理接入点")))throw err;
+      le=err;
+    }
+  }
+  throw new Error("当前模型["+cfg.label+"]请求失败（已重试 "+RETRY_CONFIG.maxRetries+" 次）: "+(le?.message||"未知"));
+}
+async function rs(resp){
+  var r=resp.body.getReader(),d=new TextDecoder();
+  var buf="",full="";
+  while(true){var res=await r.read();if(res.done)break;buf+=d.decode(res.value,{stream:true});var ls=buf.split("\n");buf=ls.pop()||"";for(var li=0;li<ls.length;li++){var tr=ls[li].trim();if(!tr||!tr.startsWith("data:"))continue;var dt=tr.slice(5).trim();if(dt==="[DONE]")break;try{var p=JSON.parse(dt);full+=p.choices?.[0]?.delta?.content||"";}catch(e){}}}
+  return full;
+}
+
+async function startGen(){
+  if(state.processing)return;
+  var gw=genWordInput.value.trim();if(!gw){st("请输入生成词");genWordInput.focus();return;}
+  if(!apiKey.value.trim()||!apiEndpoint.value.trim()||!modelName.value.trim()){st("请先完成 API 配置");apiBody.classList.add("open");apiArrow.classList.add("open");return;}
+  state.processing=true;cancelRequested=false;(document.getElementById("cancelBtnGroup")||{style:{}}).style.display="block";state.results=[];
+  for(var ii=0;ii<state.images.length;ii++){state.results.push({id:state.images[ii].id,fileName:state.images[ii].name,dataUrl:state.images[ii].dataUrl,result:"",status:"pending"});}
+  renderResults();rightFooter.style.display="block";updP(0,state.images.length,"准备中\u2026");
+  var pt=buildPrompt(gw),us=streamToggle.checked,total=state.images.length;
+  var done=0,he=false,cc=parseInt(document.getElementById("concurrencyLimit").value)||2;
+  var queue=[];for(var qi=0;qi<total;qi++){queue.push(qi);}
+  async function processItem(idx){
+    if(cancelRequested)return;
+    var img=state.images[idx];var ri=-1;
+    for(var rii=0;rii<state.results.length;rii++){if(state.results[rii].id===img.id){ri=rii;break;}}
+    if(ri===-1)return;
+    state.results[ri].status="processing";rSI(ri);
+    updP(done,total,"分析第 "+(idx+1)+"/"+total+" 张");
+    try{
+      var result=await callAPI(img.dataUrl,pt,us);
+      if(cancelRequested)return;
+      state.results[ri].result=result;state.results[ri].status="done";
+    }catch(err){
+      if(err.message==="已取消")return;
+      state.results[ri].result=err.message;state.results[ri].status="error";he=true;
+    }
+    rSI(ri);
+    if(!cancelRequested){done++;updP(done,total,done+"/"+total+" 完成");}
+  }
+  async function runner(){
+    var workers=[];
+    for(var wi=0;wi<cc&&wi<queue.length;wi++){
+      workers.push((async function(){while(queue.length>0&&!cancelRequested){var item=queue.shift();if(item!==undefined)await processItem(item);}})());
+    }
+    await Promise.all(workers);
+  }
+  await runner();
+  activeControllers.forEach(function(ac){try{ac.abort();}catch(e){}});activeControllers=[];state.processing=false;cancelRequested=false;(document.getElementById("cancelBtnGroup")||{style:{}}).style.display="none";ui();
+  if(!he&&!cancelRequested){updP(done,total,"全部完成");st("全部生成完成！");}
+  else if(cancelRequested){state.results.forEach(function(r,ri){if(r.status==="pending"){state.results[ri].status="cancelled";rSI(ri);}});updP(done,total,"已取消");st("已取消");}
+  else{updP(done,total,"处理完成（部分失败）");st("部分图片生成失败");}
+}
+
+startBtn.addEventListener("click",startGen);function cancelGeneration(){if(!state.processing)return;cancelRequested=true;activeControllers.forEach(function(ac){try{ac.abort();}catch(e){}});activeControllers=[];(document.getElementById("cancelBtnGroup")||{style:{}}).style.display="none";}(document.getElementById("cancelBtn")||document.createElement("div")).addEventListener("click",cancelGeneration);
+
+function updP(d,t,s){var p=t>0?(d/t)*100:0;progressFill.style.width=Math.min(p,100)+"%";progressInfo.textContent=s||(d+"/"+t);}
+function renderResults(){
+  if(state.results.length){emptyResults.style.display="none";resultsTable.style.display="";var h="";for(var i=0;i<state.results.length;i++){h+=rR(state.results[i],i);}resultsBody.innerHTML=h;}
+  else{emptyResults.style.display="";resultsTable.style.display="none";}ui();if(!state.results.length)rightFooter.style.display="none";
+}
+function rSI(i){var r=state.results[i];var row=resultsBody.querySelector('tr[data-id="'+r.id+'"]');if(row)row.outerHTML=rR(r,i);}
+function rR(r,i){var sm={pending:"等待",processing:"处理中",done:"完成",error:"失败"};var pv='<img src="'+r.dataUrl+'" alt="'+eh(r.fileName)+'" />';var rd='';if(r.result){rd='<div style="position:relative"><pre style="cursor:pointer" onclick="showFullView('+i+')">'+eh(r.result)+'</pre><button class="copy-btn" onclick="copyResult('+i+')" title="复制"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>';}else{rd='<span style="color:#c7c7cc;font-size:11px">等待处理\u2026</span>';}return '<tr data-id="'+r.id+'"><td class="col-index">'+(i+1)+'</td><td class="col-preview">'+pv+'</td><td>'+eh(r.fileName)+'</td><td class="col-result">'+rd+'</td><td class="col-status"><span class="status-badge '+r.status+'">'+(sm[r.status]||r.status)+'</span></td></tr>';}
+function copyResult(i){var r=state.results[i];if(!r||!r.result)return;navigator.clipboard.writeText(r.result).then(function(){st("已复制");},function(){st("复制失败");});}function showFullView(i){var r=state.results[i];if(!r||!r.result)return;document.getElementById("modalTitle").textContent=r.fileName;document.getElementById("modalBody").textContent=r.result;document.getElementById("modalOverlay").style.display="flex";}function closeModal(){document.getElementById("modalOverlay").style.display="none";}function copyModal(){var t=document.getElementById("modalBody").textContent;navigator.clipboard.writeText(t).then(function(){st("已复制");},function(){st("复制失败");});}function eh(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function exportCSV(){
+  var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}if(!a.length){st("没有可导出的结果");return;}
+  var rows=[["序号","文件名","生成结果","状态"]];
+  for(var i=0;i<a.length;i++){rows.push([i+1,a[i].fileName,a[i].result,a[i].status==="done"?"完成":"失败"]);}
+  var csv="";for(var i=0;i<rows.length;i++){if(i>0)csv+="\n";for(var j=0;j<rows[i].length;j++){if(j>0)csv+=",";var c=rows[i][j];if(typeof c==="string"&&(c.includes(",")||c.includes('"')||c.includes("\n")))csv+='"'+c.replace(/"/g,'""')+'"';else csv+=c;}}
+  var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});var url=URL.createObjectURL(blob);var aE=document.createElement("a");aE.href=url;aE.download="生成结果_"+fd()+".csv";document.body.appendChild(aE);aE.click();document.body.removeChild(aE);URL.revokeObjectURL(url);st("CSV 已导出");
+}
+exportCsvBtn.addEventListener("click",exportCSV);
+function exportExcel(){
+  if(typeof XLSX==="undefined"){st("XLSX 库尚未加载");return;}
+  var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}if(!a.length){st("没有可导出的结果");return;}
+  var data=[];for(var i=0;i<a.length;i++){var o={};o["序号"]=i+1;o["文件名"]=a[i].fileName;o["生成结果"]=a[i].result;o["状态"]=a[i].status==="done"?"完成":"失败";data.push(o);}
+  var wb=XLSX.utils.book_new();var ws=XLSX.utils.json_to_sheet(data);ws["!cols"]=[{wch:6},{wch:30},{wch:80},{wch:10}];XLSX.utils.book_append_sheet(wb,ws,"生成结果");XLSX.writeFile(wb,"生成结果_"+fd()+".xlsx");st("Excel 已导出");
+}
+exportExcelBtn.addEventListener("click",exportExcel);
+clearResultsBtn.addEventListener("click",function(){if(state.processing)return;state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
+clearAllBtn.addEventListener("click",function(){if(state.processing)return;state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
+function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
+var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}renderResults();ui();
+</script>
+</body></html>
