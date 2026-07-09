@@ -67,7 +67,7 @@ body{display:flex;flex-direction:column}
  .image-grid .img-item img{width:100%;height:100%;object-fit:contain;display:block}
 .image-grid .img-item .remove-btn{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
 .image-grid .img-item:hover .remove-btn{opacity:1}
-.image-grid .img-item .filename{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);color:#fff;font-size:9px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.image-grid .img-item .filename{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);color:#fff;font-size:9px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.image-grid .img-item .select-overlay{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:transparent;z-index:2;pointer-events:none;transition:.2s}.image-grid .img-item.selected .select-overlay{background:#0084ff;border-color:#0084ff}.image-grid .img-item.selected{border-color:#0084ff;box-shadow:0 0 0 2px rgba(0,132,255,.3);cursor:pointer}
 .results-wrapper{flex:1;overflow:auto;min-height:0}
 .results-wrapper::-webkit-scrollbar{width:4px}
 .results-wrapper::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
@@ -123,7 +123,7 @@ body{display:flex;flex-direction:column}
 <main class="panel panel-center"><div class="panel-header">上传图片<span class="count-badge" id="imgCount"></span></div><div class="panel-body" style="display:flex;flex-direction:column">
 <div class="dropzone" id="dropzone"><div class="dropzone-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
 <h3>拖入图片、点击选择或粘贴</h3><p>JPG / PNG / WebP  ·  支持批量 · Ctrl+V 粘贴</p><input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple /></div>
-<div class="image-grid" id="imageGrid"></div></div></main>
+<div class="image-grid" id="imageGrid"></div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;min-height:28px" id="selectionToolbar"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#6e6e73;cursor:pointer"><input type="checkbox" id="selectAllCheck" style="cursor:pointer" /> 全选</label><button id="deleteSelectedBtn" style="display:none;padding:3px 10px;border-radius:6px;font-size:11px;font-family:inherit;border:none;background:#ff3b30;color:#fff;cursor:pointer">删除选中</button><span id="selectedCount" style="font-size:11px;color:#c7c7cc;flex:1;text-align:right"></span></div></div></main>
 <aside class="panel panel-right"><div class="panel-header">生成结果<span class="count-badge" id="resultCount"></span></div>
 <div class="results-wrapper" id="resultsWrapper"><div class="right-empty" id="emptyResults"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
 <h4>暂无结果</h4><p>上传图片后点击“开始生成”</p></div>
@@ -401,7 +401,7 @@ var genWordInput=$("#genWord"),startBtn=$("#startBtn"),promptPreview=$("#promptP
 var apiEndpoint=$("#apiEndpoint"),apiKey=$("#apiKey"),modelName=$("#modelName"),streamToggle=$("#streamToggleDark"),compressToggle=$("#compressToggle"),maxDimension=$("#maxDimension");
 var rightFooter=$("#rightFooter"),progressFill=$("#progressFill"),progressInfo=$("#progressInfo");
 var exportCsvBtn=$("#exportCsvBtn"),exportExcelBtn=$("#exportExcelBtn"),clearResultsBtn=$("#clearResultsBtn");
-var imgCount=$("#imgCount"),resultCount=$("#resultCount"),toast=$("#toast"),clearAllBtn=$("#clearAllBtn");
+var selectedIds={};var imgCount=$("#imgCount"),resultCount=$("#resultCount"),toast=$("#toast"),clearAllBtn=$("#clearAllBtn");
 var tt=null;
 function st(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove("show");},2500);}
 var apiToggle=$("#apiToggle"),apiBody=$("#apiBody"),apiArrow=$("#apiArrow");
@@ -460,12 +460,16 @@ fileInput.addEventListener("change",function(){hf(fileInput.files);fileInput.val
 function renderGrid(){
   if(state.images.length){
     var h="";
-    for(var i=0;i<state.images.length;i++){var img=state.images[i];h+='<div class="img-item" data-id="'+img.id+'"><img src="'+img.dataUrl+'" alt="'+img.name+'" /><button class="remove-btn" data-id="'+img.id+'">\u2715</button><span class="filename">'+eh(img.name)+'</span></div>';}
+    for(var i=0;i<state.images.length;i++){var img=state.images[i];var sel=selectedIds[img.id]?" selected":"";h+='<div class="img-item"+sel data-id="'+img.id+'"><span class="select-overlay"></span><img src="'+img.dataUrl+'" alt="'+img.name+'" /><button class="remove-btn" data-id="'+img.id+'">\u2715</button><span class="filename">'+eh(img.name)+'</span></div>';}
     imageGrid.innerHTML=h;
     var btns=imageGrid.querySelectorAll(".remove-btn");
     for(var j=0;j<btns.length;j++){btns[j].addEventListener("click",function(){rm(this.dataset.id);});}
+    var items=imageGrid.querySelectorAll(".img-item");for(var j=0;j<items.length;j++){(function(el){el.addEventListener("click",function(e){if(e.target.classList.contains("remove-btn"))return;var id=this.dataset.id;if(selectedIds[id]){delete selectedIds[id];this.classList.remove("selected");}else{selectedIds[id]=true;this.classList.add("selected");}updateUI();});})(items[j]);}
   } else {imageGrid.innerHTML="";}
 }
+
+function updateUI(){var ids=Object.keys(selectedIds).filter(function(k){return selectedIds[k];});var btn=document.getElementById("deleteSelectedBtn");var cnt=document.getElementById("selectedCount");var chk=document.getElementById("selectAllCheck");if(btn)btn.style.display=ids.length?"inline-flex":"none";if(cnt)cnt.textContent=ids.length?"已选 "+ids.length+" 张":"";if(chk)chk.checked=ids.length>0&&ids.length===state.images.length;}
+function deleteSelected(){var ids=Object.keys(selectedIds).filter(function(k){return selectedIds[k];});if(!ids.length){st("请先选择图片");return;}for(var i=0;i<ids.length;i++){delete selectedIds[ids[i]];rm(ids[i]);}updateUI();}
 function rm(id){
   var t1=[];for(var i=0;i<state.images.length;i++){if(state.images[i].id!==id)t1.push(state.images[i]);}state.images=t1;
   var t2=[];for(var j=0;j<state.results.length;j++){if(state.results[j].id!==id)t2.push(state.results[j]);}state.results=t2;
@@ -619,8 +623,8 @@ function exportExcel(){
 }
 exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typeof JSZip==="undefined"){st("JSZip 库尚未加载");return;}var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}if(!a.length){st("没有可导出的结果");return;}var zip=new JSZip();var ok=0;for(var i=0;i<a.length;i++){var r=a[i];var bn=r.fileName.replace(/\.[^.]+$/,"")||"image_"+i;zip.file(bn+".json",r.result||"");if(r.dataUrl){var m=r.dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);if(m){var e=m[1];if(e==="jpeg")e="jpg";zip.file(bn+"."+e,m[2],{base64:true});}}ok++;}zip.generateAsync({type:"blob"}).then(function(b){var u=URL.createObjectURL(b);var aE=document.createElement("a");aE.href=u;aE.download="promptee_"+fd()+".zip";document.body.appendChild(aE);aE.click();document.body.removeChild(aE);URL.revokeObjectURL(u);st("ZIP 已导出（"+ok+" 条）");});}exportZipBtn.addEventListener("click",exportZIP);
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
-clearAllBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
+clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}renderResults();ui();loadResults();
+var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}renderGrid();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);renderResults();ui();loadResults();
 </script>
 </body></html>
