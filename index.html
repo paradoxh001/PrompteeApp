@@ -492,7 +492,7 @@ function pae(st,bd,mv){
 }
 async function callAPI(du,prompt,us){
   var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
-  if(window.location.protocol==="http:"&&ep.includes("ark.cn-beijing.volces.com")){ep="/api/chat";}
+  if(ep.includes("ark.cn-beijing.volces.com")){ep="/api/chat";}
   if(!ep||!key||!model)throw new Error("请先完善 API 配置");
   var cfg=modelConfig[currentModel];
   var to=cfg.timeout;
