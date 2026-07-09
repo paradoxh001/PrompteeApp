@@ -469,7 +469,7 @@ function renderGrid(){
 function rm(id){
   var t1=[];for(var i=0;i<state.images.length;i++){if(state.images[i].id!==id)t1.push(state.images[i]);}state.images=t1;
   var t2=[];for(var j=0;j<state.results.length;j++){if(state.results[j].id!==id)t2.push(state.results[j]);}state.results=t2;
-  renderGrid();ui();try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(ex){}try{var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;}catch(ex){}renderResults();
+  renderGrid();ui();saveResults();try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(ex){}try{var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;}catch(ex){}renderResults();
 }
 function ui(){
   startBtn.disabled=state.images.length===0||state.processing;
@@ -478,6 +478,8 @@ function ui(){
   for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done")d++;if(state.results[i].status==="error")e++;}
   resultCount.textContent=state.results.length?"\u00b7 "+state.results.length+(d?" \u00b7 "+d+" \u2713":"")+(e?" \u00b7 "+e+" \u2717":""):"";
 }
+function saveResults(){try{var a=[];for(var i=0;i<state.results.length;i++){a.push({id:state.results[i].id,fileName:state.results[i].fileName,dataUrl:state.results[i].dataUrl,result:state.results[i].result,status:state.results[i].status});}localStorage.setItem("promptee_results",JSON.stringify(a));}catch(e){}}
+function loadResults(){try{var d=JSON.parse(localStorage.getItem("promptee_results"));if(d&&d.length){state.results=d;renderResults();if(state.results.length)rightFooter.style.display="block";st("已恢复 "+d.length+" 条上次会话结果");}}catch(e){}}
 function buildPrompt(w){if(currentTpl==="coat"){return COAT_PROMPT;}if(currentTpl==="bottoms"){return document.getElementById("bottomsPromptData").value;}if(currentTpl==="shoes"){return document.getElementById("shoesPromptData").value;}if(currentTpl==="fullbody"){return document.getElementById("fullbodyPromptData").value;}if(currentTpl==="fullbodyShoes"){return document.getElementById("fullbodyShoesPromptData").value;if(currentTpl==="singleShoe"){return document.getElementById("singleShoePromptData").value};}return promptPreview.value;}
 var RETRY_CONFIG={maxRetries:3,baseDelay:1000,maxDelay:16000};var cancelRequested=false;var activeControllers=[];
 function pae(st,bd,mv){
@@ -569,10 +571,10 @@ async function startGen(){
     try{
       var result=await callAPI(img.dataUrl,pt,us);
       if(cancelRequested)return;
-      state.results[ri].result=result;state.results[ri].status="done";
+      state.results[ri].result=result;state.results[ri].status="done";saveResults();
     }catch(err){
       if(err.message==="已取消")return;
-      state.results[ri].result=err.message;state.results[ri].status="error";he=true;
+      state.results[ri].result=err.message;state.results[ri].status="error";he=true;saveResults();
     }
     rSI(ri);
     if(!cancelRequested){done++;updP(done,total,done+"/"+total+" 完成");}
@@ -587,7 +589,7 @@ async function startGen(){
   await runner();
   activeControllers.forEach(function(ac){try{ac.abort();}catch(e){}});activeControllers=[];state.processing=false;cancelRequested=false;(document.getElementById("cancelBtnGroup")||{style:{}}).style.display="none";ui();
   if(!he&&!cancelRequested){updP(done,total,"全部完成");st("全部生成完成！");}
-  else if(cancelRequested){state.results.forEach(function(r,ri){if(r.status==="pending"){state.results[ri].status="cancelled";rSI(ri);}});updP(done,total,"已取消");st("已取消");}
+  else if(cancelRequested){state.results.forEach(function(r,ri){if(r.status==="pending"){state.results[ri].status="cancelled";rSI(ri);}});saveResults();updP(done,total,"已取消");st("已取消");}
   else{updP(done,total,"处理完成（部分失败）");st("部分图片生成失败");}
 }
 
@@ -616,9 +618,9 @@ function exportExcel(){
   var wb=XLSX.utils.book_new();var ws=XLSX.utils.json_to_sheet(data);ws["!cols"]=[{wch:6},{wch:30},{wch:80},{wch:10}];XLSX.utils.book_append_sheet(wb,ws,"生成结果");XLSX.writeFile(wb,"生成结果_"+fd()+".xlsx");st("Excel 已导出");
 }
 exportExcelBtn.addEventListener("click",exportExcel);
-clearResultsBtn.addEventListener("click",function(){if(state.processing)return;state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
-clearAllBtn.addEventListener("click",function(){if(state.processing)return;state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
+clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
+clearAllBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}renderResults();ui();
+var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}renderResults();ui();loadResults();
 </script>
 </body></html>
