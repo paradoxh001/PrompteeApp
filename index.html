@@ -384,7 +384,7 @@ body{display:flex;flex-direction:column}
 }</textarea>
 
 <div class="modal-overlay" id="modalOverlay"><div class="modal-card"><div class="modal-header"><span class="title" id="modalTitle"></span><div class="modal-actions"><button class="modal-btn primary" onclick="copyModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 复制</button><button class="modal-btn ghost" onclick="closeModal()">✕</button></div></div><div class="modal-body" id="modalBody"></div></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script>
 
 var currentModel;try{currentModel=localStorage.getItem("ark_model_type");}catch(e){}currentModel=currentModel||"doubao-seed-2.1-turbo";
 try{var modelConfig={
