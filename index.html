@@ -489,10 +489,11 @@ function processImage(ev,cid,cf,cn){
   var img=new Image();
   img.onload=function(){
     var w=img.width,h=img.height;
+    if(w<=0||h<=0){state.images.push({id:cid,file:cf,dataUrl:du,name:cn});renderGrid();ui();return;}
     if(m>0&&(w>m||h>m)){var r=Math.min(m/w,m/h);w=Math.round(w*r);h=Math.round(h*r);}
     var c=document.createElement("canvas");c.width=w;c.height=h;
-    c.getContext("2d").drawImage(img,0,0,w,h);
-    state.images.push({id:cid,file:cf,dataUrl:c.toDataURL("image/jpeg",0.85),name:cn});renderGrid();ui();
+    var out=du;try{c.getContext("2d").drawImage(img,0,0,w,h);out=c.toDataURL("image/jpeg",0.85);if(!out||out==="data:image/jpeg;base64,")out=du;}catch(err){out=du;}
+    state.images.push({id:cid,file:cf,dataUrl:out,name:cn});renderGrid();ui();
   };
   img.onerror=function(){state.images.push({id:cid,file:cf,dataUrl:du,name:cn});renderGrid();ui();};
   img.src=du;
@@ -673,6 +674,9 @@ function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");
 try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 </script>
 </body></html>
+
+
+
 
 
 
