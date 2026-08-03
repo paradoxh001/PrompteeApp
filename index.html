@@ -63,7 +63,7 @@ body{display:flex;flex-direction:column}
 .dropzone p{font-size:12px;color:#8e8e93}
 .dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 .image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;flex-shrink:0;min-height:100px}
- .image-grid .img-item{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:3/4;background:#f0f0f0;border:1px solid #e8e8ed}
+ .image-grid .img-item{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:3/4;height:130px;min-height:130px;background:#f0f0f0;border:1px solid #e8e8ed}
  .image-grid .img-item img{width:100%;height:100%;object-fit:contain;display:block}
 .image-grid .img-item .remove-btn{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
 .image-grid .img-item:hover .remove-btn{opacity:1}
@@ -673,6 +673,7 @@ function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");
 try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 </script>
 </body></html>
+
 
 
 
