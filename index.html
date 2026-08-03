@@ -122,14 +122,24 @@ body{display:flex;flex-direction:column}
 .dual-preview:hover .rm-btn{opacity:1}
 .dual-preview .rm-btn:hover{background:#ff3b30}.dual-preview .dz-filename{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:3px 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}.dual-dropzone.drag-over{border-color:#0071e3;background:#f0f7ff}.dual-zone-hint{font-size:9px;color:#c7c7cc;padding:0 2px;line-height:1.2}.dual-upload-wrap{position:relative;aspect-ratio:16/10;width:100%}.dual-dropzone{position:absolute;inset:0;border:2px dashed #d2d2d7;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.2s;background:#fafafa;padding:16px;margin:0}.dual-dropzone:hover{border-color:#0071e3;background:#f0f7ff}.dual-dropzone.hidden{display:none}.dual-dropzone.drag-over{border-color:#0071e3;background:#f0f7ff}.dual-preview{position:absolute;inset:0;border-radius:10px;overflow:hidden;background:#f5f5f7;border:1px solid #e8e8ed;display:flex;align-items:center;justify-content:center;margin:0}</style>
 <input type="radio" name="modeGroup" id="modeSingleRadio" checked style="display:none" /><input type="radio" name="modeGroup" id="modeDualRadio" style="display:none" />
+<style>
+#modeDualRadio:checked ~ .workspace .panel-left #dualBatchRow{display:block!important}
+#modeSingleRadio:checked ~ .workspace .panel-left #dualBatchRow{display:none!important}
+.dual-mini-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:190px;overflow-y:auto}
+.dual-mini-item{position:relative;width:58px;height:58px;border-radius:8px;overflow:hidden;border:1px solid #e8e8ed;background:#f5f5f7;flex-shrink:0}
+.dual-mini-item img{width:100%;height:100%;object-fit:cover;display:block}
+.dual-mini-item .dmi-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);color:#fff;font-size:8px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dual-mini-item .dmi-rm{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:9px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.dual-zone-count{font-size:9px;color:#c7c7cc;font-weight:400}
+</style>
 <header class="header"><div style="display:flex;align-items:center;gap:16px"><img src="promptee.png" class="logo" alt="Promptee" /><h1>Promptee</h1><span class="badge">火山方舟 ARK</span></div><div class="header-actions"><button class="header-btn" id="clearAllBtn">清空</button></div></header>
 <div class="workspace">
 <aside class="panel panel-left"><div class="panel-header">生成词设置</div><div class="panel-body">
 <div class="section"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
-<div style="height:1px;background:rgba(255,255,255,.1);margin-bottom:6px"></div><div class="section"><div class="section-label">模式选择</div><div style="display:flex;gap:4px;margin-bottom:6px"><label class="tpl-btn" id="modeSingle" for="modeSingleRadio">单图解析</label><label class="tpl-btn" id="modeDual" for="modeDualRadio">双图融合</label></div><div id="modeDualHint" style="display:none;font-size:11px;color:rgba(255,255,255,.45);line-height:1.4;padding-bottom:4px">上传参考图和目标图，融合生成新图像</div></div>
+<div style="height:1px;background:rgba(255,255,255,.1);margin-bottom:6px"></div><div class="section"><div class="section-label">模式选择</div><div style="display:flex;gap:4px;margin-bottom:6px"><label class="tpl-btn" id="modeSingle" for="modeSingleRadio">单图解析</label><label class="tpl-btn" id="modeDual" for="modeDualRadio">双图融合</label></div><div id="modeDualHint" style="display:none;font-size:11px;color:rgba(255,255,255,.45);line-height:1.4;padding-bottom:4px">上传参考图和目标图，融合生成新图像</div></div><div id="dualBatchRow" style="display:none"><div class="section-label" style="margin-top:6px">融合方式</div><div style="display:flex;gap:4px;margin-bottom:6px"><button class="tpl-btn active" id="batchPairBtn" type="button">1 + 1</button><button class="tpl-btn" id="batchEnvBtn" type="button">1 主体 + N 环境</button><button class="tpl-btn" id="batchSubjBtn" type="button">N 主体 + 1 环境</button></div></div>
 <div id="replacementTargetRow" style="display:none"><div class="section-label" style="margin-top:6px">替换目标</div><div class="field-dark"><select id="replacementTarget"><option value="upper_clothing">上衣</option><option value="lower_clothing">下装</option><option value="shoes">鞋</option><option value="accessories">配饰</option><option value="full_outfit">整体穿搭</option></select></div></div>
 
-<div id="dualFusionRow" style="display:none;padding-top:4px"><button class="btn-gen primary" id="dualFusionBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> 开始融合</button></div>
+<div id="dualFusionRow" style="display:none;padding-top:4px"><button class="btn-gen primary" id="dualFusionBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> <span id="dualFusionLabel">开始融合</span></button></div>
 <div class="section" id="tplSection">>><div class="section-label">提示词模板</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px"><button class="tpl-btn" data-tpl="coat" id="tplCoat" title="替换上衣">上衣</button><button class="tpl-btn" data-tpl="bottoms" id="tplBottoms" title="替换下装">下装</button><button class="tpl-btn" data-tpl="shoes" id="tplShoes" title="替换上脚">上脚</button><button class="tpl-btn" data-tpl="fullbody" id="tplFullBody" title="替换全身">全身</button><button class="tpl-btn" data-tpl="fullbodyShoes" id="tplFullBodyShoes" title="替换全身状态下强调鞋类">全身鞋</button><button class="tpl-btn" data-tpl="singleShoe" id="tplSingleShoe" title="只有鞋类的场景图">鞋类场景</button><button class="tpl-btn active" data-tpl="custom" id="tplCustom" title="自定义提示词">自定义</button></div><div id="genWordSection"><div class="field-dark"><input id="genWord" value="上衣：图中的上衣" placeholder="输入产品描述" /><span class="hint">将替换到提示词模板的产品描述位置</span></div></div><textarea id="promptPreview" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.6;color:rgba(255,255,255,.9);width:100%;resize:vertical;min-height:100px;font-family:inherit;white-space:pre-wrap;word-break:break-word"></textarea></div>
 
 <div class="section" style="padding-top:4px"><button class="btn-gen primary" id="startBtn" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> 开始生成</button></div>
@@ -465,6 +475,8 @@ tplFullBody.addEventListener("click",function(){currentTpl="fullbody";tplFullBod
  tplFullBodyShoes.addEventListener("click",function(){currentTpl="fullbodyShoes";tplFullBodyShoes.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyShoesPromptData").value;});
 function goDual(){mode="dual_reference";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.remove("active");if(md)md.classList.add("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="none";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="none";var du=document.getElementById("dualUploadArea");if(du)du.style.display="block";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="block";}function goSingle(){mode="single";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.add("active");if(md)md.classList.remove("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="";var du=document.getElementById("dualUploadArea");if(du)du.style.display="none";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="none";}tplSingleShoe.addEventListener("click",function(){currentTpl="singleShoe";tplSingleShoe.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("singleShoePromptData").value;});
 genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",function(){try{localStorage.setItem("ark_api_key",apiKey.value);}catch(e){}});apiEndpoint.addEventListener("input",function(){try{localStorage.setItem("ark_endpoint",apiEndpoint.value);}catch(e){}});modelName.addEventListener("input",function(){try{var k=modelConfig[currentModel].endpointKey;localStorage.setItem(k,modelName.value);}catch(e){}});compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();genWordSection.style.display="none";if(currentTpl==="custom"){promptPreview.value="";}
+/* 批量模式需要接管粘贴目标，因此拦截旧的 paste 注册，统一由下方新逻辑处理 */
+(function(){var __orig=document.addEventListener.bind(document),__captured=false;document.addEventListener=function(t,f,o){if(t==="paste"&&!__captured){__captured=true;return;}return __orig(t,f,o);};})();
 function hf(files){
   var al=["image/jpeg","image/png","image/webp"];
   var ad=0;
@@ -672,6 +684,200 @@ clearResultsBtn.addEventListener("click",function(){if(state.processing)return;t
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
 try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+/* ========== 双图融合批量模式 ========== */
+var dualBatchMode="pair",subjectRefs=[],envRefs=[];
+var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
+var dualFusionBtnEl=document.getElementById("dualFusionBtn"),dualFusionLabel=document.getElementById("dualFusionLabel"),dualComboText=null;
+(function(){
+  if(document.getElementById("dualComboText"))return;
+  var hdr=document.querySelector("#dualUploadArea .dual-card-header");
+  if(hdr)hdr.insertAdjacentHTML("beforeend",'<span id="dualComboText" style="font-size:11px;color:#8e8e93;font-weight:500">1 + 1</span>');
+  dualComboText=document.getElementById("dualComboText");
+  var zones=document.querySelectorAll("#dualUploadArea .dual-zone");
+  if(zones[0]){zones[0].id="subjectZone";var sl=zones[0].querySelector(".dual-zone-label");if(sl)sl.insertAdjacentHTML("beforeend",' <span class="dual-zone-count" id="subjectZoneCount">0 张</span>');var sh=zones[0].querySelector(".dual-zone-hint");if(sh)sh.id="subjectZoneHint";var sw=zones[0].querySelector(".dual-upload-wrap");if(sw)sw.insertAdjacentHTML("afterend",'<div class="dual-mini-grid" id="subjectMiniGrid"></div>');var sdz=document.getElementById("subjectDropzone");if(sdz)sdz.insertAdjacentHTML("beforeend",'<input type="file" id="subjectFileInputBatch" accept="image/jpeg,image/png,image/webp" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1"/>');}
+  if(zones[1]){zones[1].id="envZone";var el=zones[1].querySelector(".dual-zone-label");if(el)el.insertAdjacentHTML("beforeend",' <span class="dual-zone-count" id="envZoneCount">0 张</span>');var eh2=zones[1].querySelector(".dual-zone-hint");if(eh2)eh2.id="envZoneHint";var ew=zones[1].querySelector(".dual-upload-wrap");if(ew)ew.insertAdjacentHTML("afterend",'<div class="dual-mini-grid" id="envMiniGrid"></div>');var edz=document.getElementById("envDropzone");if(edz)edz.insertAdjacentHTML("beforeend",'<input type="file" id="envFileInputBatch" accept="image/jpeg,image/png,image/webp" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1"/>');}
+})();
+function dualUsed(){var s=subjectRefs.length?1:0,e=envRefs.length?1:0;if(dualBatchMode==="1n")e=envRefs.length;if(dualBatchMode==="n1")s=subjectRefs.length;return {s:s,e:e};}
+function dualCombo(){var u=dualUsed();return u.s*u.e;}
+function updateDualCombo(){
+  var u=dualUsed(),c=dualCombo();
+  if(dualComboText)dualComboText.textContent=dualBatchMode==="pair"?"1 + 1 融合":(dualBatchMode==="1n"?"1 × "+u.e+" = "+c+" 组":u.s+" × 1 = "+c+" 组");
+  if(dualFusionLabel)dualFusionLabel.textContent="开始融合"+(c>1?"（"+c+" 组）":"");
+  var sh=document.getElementById("subjectZoneHint"),eh3=document.getElementById("envZoneHint");
+  if(sh)sh.textContent=dualBatchMode==="n1"?"多张主体 · 身份 · 动作 · 体态":"身份 · 动作 · 体态";
+  if(eh3)eh3.textContent=dualBatchMode==="1n"?"多张环境 · 场景 · 背景 · 光影":"场景 · 背景 · 光影";
+}
+function renderDualMini(){
+  var render=function(list,gridId,tg){
+    var g=document.getElementById(gridId);if(!g)return;
+    var h="";
+    for(var i=0;i<list.length;i++){var it=list[i];h+='<div class="dual-mini-item" data-id="'+it.id+'" title="'+eh(it.name)+'"><img src="'+it.dataUrl+'" alt="'+eh(it.name)+'" /><span class="dmi-name">'+eh(it.name)+'</span><button class="dmi-rm" data-id="'+it.id+'" data-tg="'+tg+'">\u2715</button></div>';}
+    g.innerHTML=h;
+    var btns=g.querySelectorAll(".dmi-rm");
+    for(var b=0;b<btns.length;b++){btns[b].addEventListener("click",function(ev){ev.stopPropagation();ev.preventDefault();removeDualImage(this.dataset.tg,this.dataset.id);});}
+    var zc=document.getElementById(tg==="s"?"subjectZoneCount":"envZoneCount");
+    if(zc)zc.textContent=list.length+" 张";
+  };
+  render(subjectRefs,"subjectMiniGrid","s");
+  render(envRefs,"envMiniGrid","e");
+  updateDualCombo();
+}
+function removeDualImage(tg,id){
+  var arr=tg==="s"?subjectRefs:envRefs;
+  for(var i=0;i<arr.length;i++){if(arr[i].id===id){arr.splice(i,1);break;}}
+  if(tg==="s")subjectRef=subjectRefs[0]||null;else envRef=envRefs[0]||null;
+  renderDualMini();
+}
+function clearDualImages(){subjectRefs=[];envRefs=[];subjectRef=null;envRef=null;renderDualMini();}
+function dualAddFiles(files,tg){
+  var al=["image/jpeg","image/png","image/webp"];
+  for(var i=0;i<files.length;i++){
+    var f=files[i];if(!f||!al.includes(f.type))continue;
+    (function(ff){var r=new FileReader();r.onload=function(ev){processDualImage(ev.target.result,ff.name,tg);};r.readAsDataURL(ff);})(f);
+  }
+}
+function processDualImage(du,fn,tg){
+  var show=function(d,n){
+    var arr=tg==="s"?subjectRefs:envRefs;
+    for(var i=0;i<arr.length;i++){if(arr[i].name===n&&arr[i].dataUrl===d)return;}
+    if(dualBatchMode==="pair"){if(tg==="s"&&subjectRefs.length>=1){st("1+1 模式主体最多 1 张");return;}if(tg==="e"&&envRefs.length>=1){st("1+1 模式环境最多 1 张");return;}}
+    if(dualBatchMode==="1n"&&tg==="s"&&subjectRefs.length>=1){st("1 主体 + N 环境模式主体最多 1 张");return;}
+    if(dualBatchMode==="n1"&&tg==="e"&&envRefs.length>=1){st("N 主体 + 1 环境模式环境最多 1 张");return;}
+    var id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var obj={id:id,dataUrl:d,name:n};
+    if(tg==="s"){subjectRefs.push(obj);subjectRef=obj;}else{envRefs.push(obj);envRef=obj;}
+    renderDualMini();
+  };
+  if(!document.getElementById("compressToggle").checked||parseInt(document.getElementById("maxDimension").value||0)<=0){show(du,fn);return;}
+  var m=parseInt(document.getElementById("maxDimension").value)||1024;
+  var i2=new Image();
+  i2.onload=function(){var w=i2.width,h=i2.height;if(m>0&&(w>m||h>m)){var s2=Math.min(m/w,m/h);w=Math.round(w*s2);h=Math.round(h*s2);}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(i2,0,0,w,h);show(c.toDataURL("image/jpeg",0.85),fn);};
+  i2.onerror=function(){show(du,fn);};
+  i2.src=du;
+}
+function buildFusionSubjectPrompt(){
+  var sp=document.getElementById("subjPrompt").value;
+  var tl2=replacementTarget==="upper_clothing"?"上衣":replacementTarget==="lower_clothing"?"下装":replacementTarget==="shoes"?"鞋":replacementTarget==="accessories"?"配饰":"整体穿搭";
+  sp=sp.split("{target}").join(tl2);
+  if(replacementTarget==="full_outfit"){
+    sp=sp.replace("除整体穿搭外的衣着信息","所有衣着信息");
+    sp=sp.replace("除整体穿搭外的其他衣着描述","袜子、帽子、配饰等其他配饰描述，保持整体风格统一（运动感、主色调、材质）；避免描述任何品牌特有设计元素（三道条纹、钩形标志、logo等），使用通用装饰描述");
+    sp=sp.replace("禁止描述被替换的整体穿搭的版型与贴合状态","禁止描述被替换衣物的版型与贴合状态");
+  }
+  return sp;
+}
+function mergeFusion(sr,er){
+  var merge={};
+  if(sr&&sr.人物){merge.人物=sr.人物;if(sr.人物["动作姿态与站位"])merge["动作姿态（核心）"]=sr.人物["动作姿态与站位"];}
+  if(er){if(er.场景环境)merge.场景环境=er.场景环境;if(er.镜头与构图)merge.镜头与构图=er.镜头与构图;if(er.色彩风格)merge.色彩风格=er.色彩风格;}
+  var tl=replacementTarget==="upper_clothing"?"上衣":replacementTarget==="lower_clothing"?"下装":replacementTarget==="shoes"?"鞋":replacementTarget==="accessories"?"配饰":"整体穿搭";
+  if(replacementTarget==="full_outfit"){
+    var ti={};ti["上衣"]="图中的上衣";ti["下装"]="图中的下装";ti["鞋子"]="图中的鞋子";
+    merge["主体商品（占位）"]=ti;
+    merge["生成约束"]="保持主体位置、拍摄机位和视觉重心一致；精确保留模特动作姿态、四肢位置、重心、朝向完全不变；保留人物面部、身份、身材比例不变；保留场景类型、背景道具、光影氛围不变；替换后的上衣、下装、鞋子与其他穿着风格、色彩、材质保持协调一致；避免任何品牌特有设计元素（三道条纹、钩形标志、logo等）；不保留原始整体穿搭，替换为图中的上衣、图中的下装、图中的鞋子；输出完整中文JSON。";
+  }else{
+    var ti2={};ti2[tl+"类型"]="参考图中的"+tl;ti2[tl+"款式"]="图中替换的"+tl+"的具体款式描述";ti2[tl+"颜色"]="图中替换的"+tl+"的颜色";ti2[tl+"材质"]="图中替换的"+tl+"的材质";ti2[tl+"细节特征"]="图中替换的"+tl+"的细节特征、设计元素等";
+    merge["主体商品（占位）"]=ti2;
+    merge["生成约束"]="保持主体位置、拍摄机位和视觉重心一致；精确保留模特动作姿态、四肢位置、重心、朝向完全不变；保留人物面部、身份、身材比例不变；保留场景类型、背景道具、光影氛围不变；替换后的"+tl+"与其他穿着的风格、色彩、材质保持协调一致；避免任何品牌特有设计元素（三道条纹、钩形标志、logo等）；不保留原始"+tl+"，仅替换为参考图中的"+tl+"；输出完整中文JSON。";
+  }
+  return JSON.stringify(merge,null,2);
+}
+function startFusion(){
+  if(state.processing){st("正在处理中...");return;}
+  var u=dualUsed();
+  if(!u.s||!u.e){st(!u.s?"请先上传主体参考图":"请先上传环境参考图");return;}
+  var subjects,envs;
+  if(dualBatchMode==="n1"){subjects=subjectRefs.slice();envs=[envRefs[0]];}
+  else if(dualBatchMode==="1n"){subjects=[subjectRefs[0]];envs=envRefs.slice();}
+  else{subjects=[subjectRefs[0]];envs=[envRefs[0]];}
+  var tasks=[];
+  for(var i=0;i<subjects.length;i++){for(var j=0;j<envs.length;j++){tasks.push({s:subjects[i],e:envs[j],rid:Date.now().toString(36)+Math.random().toString(36).slice(2,6)});}}
+  state.processing=true;cancelRequested=false;
+  (document.getElementById("cancelBtnGroup")||{style:{}}).style.display="block";
+  state.results=[];
+  for(var k=0;k<tasks.length;k++){state.results.push({id:tasks[k].rid,fileName:"[融合] "+tasks[k].s.name+" + "+tasks[k].e.name,dataUrl:tasks[k].s.dataUrl,result:"",status:"pending"});}
+  renderResults();rightFooter.style.display="block";
+  updP(0,tasks.length,"融合准备中...");
+  st("开始融合 "+tasks.length+" 组...");
+  var us=streamToggle.checked;
+  var sp=buildFusionSubjectPrompt();
+  var ep=document.getElementById("envPrompt").value;
+  var sCache={},eCache={},done=0,he=false;
+  var cc=parseInt(document.getElementById("concurrencyLimit").value)||2;
+  var queue=tasks.slice();
+  async function analyzeOne(img,isSubj,p){
+    var key=img.id,cache=isSubj?sCache:eCache;
+    if(cache[key])return cache[key];
+    var pr=callAPI(img.dataUrl,p,false).then(function(t){return JSON.parse(t);});
+    cache[key]=pr;
+    try{return await pr;}catch(e){delete cache[key];throw e;}
+  }
+  async function processTask(task){
+    if(cancelRequested)return;
+    var ri=-1;for(var z=0;z<state.results.length;z++){if(state.results[z].id===task.rid){ri=z;break;}}
+    if(ri===-1)return;
+    state.results[ri].status="processing";rSI(ri);
+    updP(done,tasks.length,"融合 "+task.s.name+" + "+task.e.name);
+    try{
+      var sr=await analyzeOne(task.s,true,sp);
+      if(cancelRequested)return;
+      var er=await analyzeOne(task.e,false,ep);
+      if(cancelRequested)return;
+      state.results[ri].result=mergeFusion(sr,er);state.results[ri].status="done";saveResults();
+    }catch(err){
+      if(err.message==="已取消")return;
+      state.results[ri].result=err.message;state.results[ri].status="error";he=true;saveResults();
+    }
+    rSI(ri);
+    if(!cancelRequested){done++;updP(done,tasks.length,done+"/"+tasks.length+" 完成");}
+  }
+  (async function(){
+    var workers=[];
+    for(var wi=0;wi<cc&&wi<queue.length;wi++){
+      workers.push((async function(){while(queue.length>0&&!cancelRequested){var item=queue.shift();if(item!==undefined)await processTask(item);}})());
+    }
+    await Promise.all(workers);
+    activeControllers.forEach(function(ac){try{ac.abort();}catch(e){}});activeControllers=[];
+    state.processing=false;cancelRequested=false;
+    (document.getElementById("cancelBtnGroup")||{style:{}}).style.display="none";
+    if(!he&&!cancelRequested){updP(done,tasks.length,"全部完成");st("融合完成 "+tasks.length+" 组");}
+    else if(cancelRequested){state.results.forEach(function(r,ri2){if(r.status==="pending"){state.results[ri2].status="cancelled";rSI(ri2);}});saveResults();updP(done,tasks.length,"已取消");st("已取消");}
+    else{updP(done,tasks.length,"处理完成（部分失败）");st("部分融合失败");}
+  })();
+}
+function setDualBatchMode(m){
+  dualBatchMode=m;
+  if(batchPairBtn)batchPairBtn.classList.toggle("active",m==="pair");
+  if(batchEnvBtn)batchEnvBtn.classList.toggle("active",m==="1n");
+  if(batchSubjBtn)batchSubjBtn.classList.toggle("active",m==="n1");
+  renderDualMini();
+}
+if(batchPairBtn)batchPairBtn.addEventListener("click",function(){setDualBatchMode("pair");});
+if(batchEnvBtn)batchEnvBtn.addEventListener("click",function(){setDualBatchMode("1n");});
+if(batchSubjBtn)batchSubjBtn.addEventListener("click",function(){setDualBatchMode("n1");});
+document.getElementById("dualClearBtn").addEventListener("click",function(){clearDualImages();});
+document.getElementById("subjectDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
+document.getElementById("subjectDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
+document.getElementById("subjectDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"s");});
+document.getElementById("envDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
+document.getElementById("envDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
+document.getElementById("envDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"e");});
+var sb=document.getElementById("subjectFileInputBatch");if(sb)sb.addEventListener("change",function(){dualAddFiles(this.files,"s");this.value="";});
+var eb=document.getElementById("envFileInputBatch");if(eb)eb.addEventListener("change",function(){dualAddFiles(this.files,"e");this.value="";});
+document.addEventListener("paste",function(e){
+  var items=(e.clipboardData||{}).items,files=[];
+  if(items)for(var i=0;i<items.length;i++){if(items[i].type.indexOf("image")!==-1){var f=items[i].getAsFile();if(f)files.push(f);}}
+  if(!files.length)return;e.preventDefault();
+  if(mode==="dual_reference"){
+    var tg="s";
+    if(dualBatchMode==="1n"){tg=subjectRefs.length?"e":"s";}
+    else if(dualBatchMode==="n1"){tg=envRefs.length?"s":"e";}
+    else{tg=subjectRefs.length?(envRefs.length?null:"e"):"s";}
+    if(tg===null){st("1+1 模式最多各 1 张，请切换到批量方式");return;}
+    dualAddFiles(files,tg);
+  }else{hf(files);}
+});
+renderDualMini();
 </script>
 </body></html>
 
