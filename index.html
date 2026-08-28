@@ -130,6 +130,10 @@ body{display:flex;flex-direction:column}
 .dual-mini-item img{width:100%;height:100%;object-fit:cover;display:block}
 .dual-mini-item .dmi-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);color:#fff;font-size:8px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dual-mini-item .dmi-rm{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:9px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.dmi-primary{position:absolute;top:2px;left:2px;background:#0084ff;color:#fff;font-size:8px;line-height:1;padding:2px 4px;border-radius:4px;z-index:2;letter-spacing:0}
+.dual-mini-item.primary{border-color:#0084ff}
+.dual-mini-add{width:58px;height:58px;border-radius:8px;border:1px dashed #c7c7cc;background:#fff;color:#8e8e93;font-size:10px;white-space:nowrap;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s;padding:0}
+.dual-mini-add:hover{border-color:#0084ff;color:#0084ff;background:#f0f7ff}
 .dual-zone-count{font-size:9px;color:#c7c7cc;font-weight:400}
 .results-table .col-preview{width:88px;padding:6px 8px}
 .results-table .col-preview .dual-thumbs{display:flex;gap:4px;align-items:center}
@@ -529,7 +533,7 @@ function processImage(ev,cid,cf,cn){
 dropzone.addEventListener("dragover",function(e){e.preventDefault();dropzone.classList.add("drag-over");});
 dropzone.addEventListener("dragleave",function(){dropzone.classList.remove("drag-over");});
 dropzone.addEventListener("drop",function(e){e.preventDefault();dropzone.classList.remove("drag-over");hf(e.dataTransfer.files);});
-fileInput.addEventListener("change",function(){hf(fileInput.files);fileInput.value="";});document.getElementById("subjectFileInput").addEventListener("change",function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){processDualImage(e.target.result,f.name,"s");};r.readAsDataURL(f);});document.getElementById("envFileInput").addEventListener("change",function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){processDualImage(e.target.result,f.name,"e");};r.readAsDataURL(f);});document.getElementById("subjectDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});document.getElementById("subjectDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});document.getElementById("subjectDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");var f=e.dataTransfer.files[0];if(!f)return;var al=["image/jpeg","image/png","image/webp"];if(!al.includes(f.type)){st("不支持的图片格式");return;}var r=new FileReader();r.onload=function(ev){processDualImage(ev.target.result,f.name,"s");};r.readAsDataURL(f);});document.getElementById("envDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});document.getElementById("envDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});document.getElementById("envDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");var f=e.dataTransfer.files[0];if(!f)return;var al=["image/jpeg","image/png","image/webp"];if(!al.includes(f.type)){st("不支持的图片格式");return;}var r=new FileReader();r.onload=function(ev){processDualImage(ev.target.result,f.name,"e");};r.readAsDataURL(f);});document.addEventListener("paste",function(e){var items=(e.clipboardData||{}).items;var files=[];if(items)for(var i=0;i<items.length;i++){if(items[i].type.indexOf("image")!==-1){var f=items[i].getAsFile();if(f)files.push(f);}}if(!files.length)return;e.preventDefault();if(mode==="dual_reference"){var f0=files[0];var al2=["image/jpeg","image/png","image/webp"];if(!al2.includes(f0.type)){st("不支持的图片格式");return;}var r2=new FileReader();r2.onload=function(ev){processDualImage(ev.target.result,"pasted.png",!subjectRef?"s":"e");};r2.readAsDataURL(f0);}else{hf(files);}});
+fileInput.addEventListener("change",function(){hf(fileInput.files);fileInput.value="";});
 function renderGrid(){
   if(state.images.length){
     var h="";
@@ -701,7 +705,7 @@ clearAllBtn.addEventListener("click",function(){if(state.processing)return;selec
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
 try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
-var dualBatchMode="pair",subjectRefs=[],envRefs=[];
+var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
 var dualFusionBtnEl=document.getElementById("dualFusionBtn"),dualFusionLabel=document.getElementById("dualFusionLabel"),dualComboText=null;
 (function(){
@@ -727,10 +731,13 @@ function renderDualMini(){
   var render=function(list,gridId,tg){
     var g=document.getElementById(gridId);if(!g)return;
     var h="";
-    for(var i=0;i<list.length;i++){var it=list[i];h+='<div class="dual-mini-item" data-id="'+it.id+'" title="'+eh(it.name)+'"><img src="'+it.dataUrl+'" alt="'+eh(it.name)+'" /><span class="dmi-name">'+eh(it.name)+'</span><button class="dmi-rm" data-id="'+it.id+'" data-tg="'+tg+'">\u2715</button></div>';}
+    for(var i=0;i<list.length;i++){var it=list[i];h+='<div class="dual-mini-item'+(i===0?" primary":"")+'" data-id="'+it.id+'" title="'+eh(it.name)+'"><img src="'+it.dataUrl+'" alt="'+eh(it.name)+'" />'+(i===0?'<span class="dmi-primary">主图</span>':"")+'<span class="dmi-name">'+eh(it.name)+'</span><button class="dmi-rm" data-id="'+it.id+'" data-tg="'+tg+'">✕</button></div>';}
+    h+='<button class="dual-mini-add" type="button" data-tg="'+tg+'" title="继续添加">+ 添加</button>';
     g.innerHTML=h;
     var btns=g.querySelectorAll(".dmi-rm");
     for(var b=0;b<btns.length;b++){btns[b].addEventListener("click",function(ev){ev.stopPropagation();ev.preventDefault();removeDualImage(this.dataset.tg,this.dataset.id);});}
+    var ab=g.querySelector(".dual-mini-add");
+    if(ab)ab.addEventListener("click",function(){var inp=document.getElementById(this.dataset.tg==="s"?"subjectFileInputBatch":"envFileInputBatch");if(inp)inp.click();});
     var zc=document.getElementById(tg==="s"?"subjectZoneCount":"envZoneCount");
     if(zc)zc.textContent=list.length+" 张";
   };
@@ -746,22 +753,25 @@ function removeDualImage(tg,id){
 }
 function clearDualImages(){subjectRefs=[];envRefs=[];subjectRef=null;envRef=null;renderDualMini();}
 function dualAddFiles(files,tg){
-  var al=["image/jpeg","image/png","image/webp"];
+  var al=["image/jpeg","image/png","image/webp"],ok=0;
   for(var i=0;i<files.length;i++){
     var f=files[i];if(!f||!al.includes(f.type))continue;
-    (function(ff){var r=new FileReader();r.onload=function(ev){processDualImage(ev.target.result,ff.name,tg);};r.readAsDataURL(ff);})(f);
+    ok++;
+    var si=tg==="s"?subjectSeq++:envSeq++;
+    (function(ff,s){var r=new FileReader();r.onload=function(ev){processDualImage(ev.target.result,ff.name,tg,s);};r.readAsDataURL(ff);})(f,si);
   }
+  if(files.length&&!ok)st("请上传 JPG / PNG / WebP 格式的图片");
 }
-function processDualImage(du,fn,tg){
+function processDualImage(du,fn,tg,seq){
   var show=function(d,n){
     var arr=tg==="s"?subjectRefs:envRefs;
-    for(var i=0;i<arr.length;i++){if(arr[i].name===n&&arr[i].dataUrl===d)return;}
+    for(var i=0;i<arr.length;i++){if(arr[i].dataUrl===d)return;}
     if(dualBatchMode==="pair"){if(tg==="s"&&subjectRefs.length>=1){st("1+1 模式主体最多 1 张");return;}if(tg==="e"&&envRefs.length>=1){st("1+1 模式环境最多 1 张");return;}}
     if(dualBatchMode==="1n"&&tg==="s"&&subjectRefs.length>=1){st("1 主体 + N 环境模式主体最多 1 张");return;}
     if(dualBatchMode==="n1"&&tg==="e"&&envRefs.length>=1){st("N 主体 + 1 环境模式环境最多 1 张");return;}
     var id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    var obj={id:id,dataUrl:d,name:n};
-    if(tg==="s"){subjectRefs.push(obj);subjectRef=obj;}else{envRefs.push(obj);envRef=obj;}
+    var obj={id:id,dataUrl:d,name:n,seq:seq};
+    if(tg==="s"){subjectRefs.push(obj);subjectRefs.sort(function(a,b){return a.seq-b.seq;});subjectRef=subjectRefs[0];}else{envRefs.push(obj);envRefs.sort(function(a,b){return a.seq-b.seq;});envRef=envRefs[0];}
     renderDualMini();
   };
   if(!document.getElementById("compressToggle").checked||parseInt(document.getElementById("maxDimension").value||0)<=0){show(du,fn);return;}
@@ -882,12 +892,12 @@ if(batchPairBtn)batchPairBtn.addEventListener("click",function(){setDualBatchMod
 if(batchEnvBtn)batchEnvBtn.addEventListener("click",function(){setDualBatchMode("1n");});
 if(batchSubjBtn)batchSubjBtn.addEventListener("click",function(){setDualBatchMode("n1");});
 document.getElementById("dualClearBtn").addEventListener("click",function(){clearDualImages();});
-document.getElementById("subjectDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
-document.getElementById("subjectDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
-document.getElementById("subjectDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"s");});
-document.getElementById("envDropzone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
-document.getElementById("envDropzone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
-document.getElementById("envDropzone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"e");});
+document.getElementById("subjectZone").addEventListener("dragover",function(e){e.preventDefault();var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.add("drag-over");});
+document.getElementById("subjectZone").addEventListener("dragleave",function(){var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.remove("drag-over");});
+document.getElementById("subjectZone").addEventListener("drop",function(e){e.preventDefault();var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"s");});
+document.getElementById("envZone").addEventListener("dragover",function(e){e.preventDefault();var dz=document.getElementById("envDropzone");if(dz)dz.classList.add("drag-over");});
+document.getElementById("envZone").addEventListener("dragleave",function(){var dz=document.getElementById("envDropzone");if(dz)dz.classList.remove("drag-over");});
+document.getElementById("envZone").addEventListener("drop",function(e){e.preventDefault();var dz=document.getElementById("envDropzone");if(dz)dz.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"e");});
 var sb=document.getElementById("subjectFileInputBatch");if(sb)sb.addEventListener("change",function(){dualAddFiles(this.files,"s");this.value="";});
 var eb=document.getElementById("envFileInputBatch");if(eb)eb.addEventListener("change",function(){dualAddFiles(this.files,"e");this.value="";});
 document.addEventListener("paste",function(e){
