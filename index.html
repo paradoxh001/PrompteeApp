@@ -126,6 +126,8 @@ body{display:flex;flex-direction:column}
 #modeDualRadio:checked ~ .workspace .panel-left #dualBatchRow{display:block!important}
 #modeSingleRadio:checked ~ .workspace .panel-left #dualBatchRow{display:none!important}
 .dual-mini-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:190px;overflow-y:auto}
+.dual-mini-grid.has-items{border:2px dashed #d2d2d7;border-radius:10px;background:#fafafa;padding:12px;margin-top:0;min-height:140px;align-content:flex-start;max-height:230px}
+.dual-zone.drag-over .dual-dropzone,.dual-zone.drag-over .dual-mini-grid.has-items{border-color:#0071e3;background:#f0f7ff}
 .dual-mini-item{position:relative;width:58px;height:58px;border-radius:8px;overflow:hidden;border:1px solid #e8e8ed;background:#f5f5f7;flex-shrink:0}
 .dual-mini-item img{width:100%;height:100%;object-fit:cover;display:block}
 .dual-mini-item .dmi-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);color:#fff;font-size:8px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -730,9 +732,14 @@ function updateDualCombo(){
 function renderDualMini(){
   var render=function(list,gridId,tg){
     var g=document.getElementById(gridId);if(!g)return;
+    var wrap=document.querySelector(tg==="s"?"#subjectZone .dual-upload-wrap":"#envZone .dual-upload-wrap");
+    var has=list.length>0;
+    if(wrap)wrap.style.display=has?"none":"";
+    g.classList.toggle("has-items",has);
+    g.style.display=has?"":"none";
     var h="";
     for(var i=0;i<list.length;i++){var it=list[i];h+='<div class="dual-mini-item'+(i===0?" primary":"")+'" data-id="'+it.id+'" title="'+eh(it.name)+'"><img src="'+it.dataUrl+'" alt="'+eh(it.name)+'" />'+(i===0?'<span class="dmi-primary">主图</span>':"")+'<span class="dmi-name">'+eh(it.name)+'</span><button class="dmi-rm" data-id="'+it.id+'" data-tg="'+tg+'">✕</button></div>';}
-    h+='<button class="dual-mini-add" type="button" data-tg="'+tg+'" title="继续添加">+ 添加</button>';
+    if(has)h+='<button class="dual-mini-add" type="button" data-tg="'+tg+'" title="继续添加">+ 添加</button>';
     g.innerHTML=h;
     var btns=g.querySelectorAll(".dmi-rm");
     for(var b=0;b<btns.length;b++){btns[b].addEventListener("click",function(ev){ev.stopPropagation();ev.preventDefault();removeDualImage(this.dataset.tg,this.dataset.id);});}
@@ -892,12 +899,12 @@ if(batchPairBtn)batchPairBtn.addEventListener("click",function(){setDualBatchMod
 if(batchEnvBtn)batchEnvBtn.addEventListener("click",function(){setDualBatchMode("1n");});
 if(batchSubjBtn)batchSubjBtn.addEventListener("click",function(){setDualBatchMode("n1");});
 document.getElementById("dualClearBtn").addEventListener("click",function(){clearDualImages();});
-document.getElementById("subjectZone").addEventListener("dragover",function(e){e.preventDefault();var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.add("drag-over");});
-document.getElementById("subjectZone").addEventListener("dragleave",function(){var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.remove("drag-over");});
-document.getElementById("subjectZone").addEventListener("drop",function(e){e.preventDefault();var dz=document.getElementById("subjectDropzone");if(dz)dz.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"s");});
-document.getElementById("envZone").addEventListener("dragover",function(e){e.preventDefault();var dz=document.getElementById("envDropzone");if(dz)dz.classList.add("drag-over");});
-document.getElementById("envZone").addEventListener("dragleave",function(){var dz=document.getElementById("envDropzone");if(dz)dz.classList.remove("drag-over");});
-document.getElementById("envZone").addEventListener("drop",function(e){e.preventDefault();var dz=document.getElementById("envDropzone");if(dz)dz.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"e");});
+document.getElementById("subjectZone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
+document.getElementById("subjectZone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
+document.getElementById("subjectZone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"s");});
+document.getElementById("envZone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag-over");});
+document.getElementById("envZone").addEventListener("dragleave",function(){this.classList.remove("drag-over");});
+document.getElementById("envZone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag-over");dualAddFiles(e.dataTransfer.files,"e");});
 var sb=document.getElementById("subjectFileInputBatch");if(sb)sb.addEventListener("change",function(){dualAddFiles(this.files,"s");this.value="";});
 var eb=document.getElementById("envFileInputBatch");if(eb)eb.addEventListener("change",function(){dualAddFiles(this.files,"e");this.value="";});
 document.addEventListener("paste",function(e){
