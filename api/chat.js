@@ -24,7 +24,14 @@ export default async function handler(req, res) {
   applyCors(res);
 
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST, OPTIONS");
+    return res.status(405).json({
+      error: "此端点仅接受 POST 请求",
+      hint: "请求体需包含 target_url、api_key、auth_style，以及 OpenAI 兼容的 model / messages 字段",
+      method: req.method
+    });
+  }
 
   const gate = checkRate(clientId(req));
   if (!gate.allowed) {

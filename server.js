@@ -6,6 +6,11 @@ function loadCore(){ if(!corePromise) corePromise=import('./lib/proxy-core.js');
 const s=http.createServer((q,r)=>{
   const cors=(h)=>{h['Access-Control-Allow-Origin']='*';h['Access-Control-Allow-Headers']='*';h['Access-Control-Allow-Methods']='GET,POST,OPTIONS';return h;};
   if(q.method==='OPTIONS'){r.writeHead(204,cors({}));r.end();return;}
+  if(q.url==='/api/chat'&&q.method!=='POST'&&q.method!=='OPTIONS'){
+    r.writeHead(405,cors({'Content-Type':'application/json','Allow':'POST, OPTIONS'}));
+    r.end(JSON.stringify({error:'此端点仅接受 POST 请求',hint:'请求体需包含 target_url、api_key、auth_style，以及 OpenAI 兼容的 model / messages 字段',method:q.method}));
+    return;
+  }
   if(q.url==='/api/chat'&&q.method==='POST'){
     let body='';
     q.on('data',c=>body+=c);
