@@ -512,7 +512,7 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <div class="cfg-side"><div class="cfg-side-t">配置档案</div><div class="cfg-list" id="cfgList"></div><button class="cfg-add" id="cfgAddBtn" type="button">＋ 新建配置</button></div>
 <div class="cfg-main"><div class="field-dark" style="margin-bottom:14px"><label>配置名称</label><input id="profileName" placeholder="例如 apilio 生产" /></div>
 <div class="section"><div class="section-label">服务商</div><select id="providerSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="ark">火山方舟 ARK</option><option value="custom">自定义（OpenAI 兼容）</option></select></div>
-<div class="section" id="modelSelectSection"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
+<div class="section" id="modelSelectSection"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option><option value="ark-custom">自定义接入点</option></select></div>
 
 <div class="field-dark" style="margin-bottom:10px"><label>API 地址</label><input id="apiEndpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions" /></div>
 <div class="field-dark" id="authStyleRow" style="margin-bottom:10px;display:none"><label>鉴权方式</label><select id="authStyleSelect"><option value="bearer">Authorization: Bearer</option><option value="x-api-key">x-api-key</option><option value="api-key" selected>api-key</option></select><span class="hint">按服务商文档选择</span></div>
@@ -674,6 +674,7 @@ try{var modelConfig={
   "doubao-vision-pro-32k":{label:"Doubao-vision-pro-32k",endpointKey:"ark_ep_vp32k",endpointDefault:"ep-20260706162916-cwsp4",maxTokens:12288,timeout:60000},
   "doubao-seed-2.1-turbo":{label:"Seed2.1 Turbo",endpointKey:"ark_ep_seed21t",endpointDefault:"ep-20260708192217-zfkkf",maxTokens:8192,timeout:45000,thinkingTypeDisabled:true},
   "doubao-seed-2.1-pro":{label:"Doubao Seed 2.1 Pro",endpointKey:"ark_ep_seed21",endpointDefault:"ep-20260707145037-qbhn8",maxTokens:4500,timeout:120000,thinkingTypeDisabled:true},
+  "ark-custom":{label:"自定义接入点",endpointKey:"ark_ep_custom",endpointDefault:"",maxTokens:8192,timeout:120000},
   "custom":{label:"自定义模型",endpointKey:"custom_model",endpointDefault:"",maxTokens:4096,timeout:120000}
 };}catch(e){}
 var vault=loadVault();
