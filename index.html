@@ -29,6 +29,11 @@ body{display:flex;flex-direction:column}
 .panel-left .panel-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12)}
 .panel-left .panel-fixed{flex:0 0 auto;padding:20px 20px 6px}
 .panel-left .panel-scroll{flex:1 1 auto;min-height:0;padding:10px 20px 20px;border-top:1px solid rgba(255,255,255,.06)}
+.test-conn-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.8)}
+.test-conn-btn:hover{border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.1);color:#fff}
+.test-conn-btn:disabled{opacity:.55;cursor:not-allowed}
+.test-conn-result{margin-top:6px;font-size:11px;line-height:1.55;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-wrap}
+.test-conn-result.ok{color:#34c759}.test-conn-result.err{color:#ff6b6b}.test-conn-result.warn{color:#ffb340}
 .section{margin-bottom:20px}
 .section:last-child{margin-bottom:0}
 .section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
@@ -178,6 +183,7 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <div class="toggle-row-dark" id="proxyToggleRow" style="display:none"><label for="useProxyToggle">通过代理转发</label><span class="toggle-dark"><input type="checkbox" id="useProxyToggle" checked /><span class="slider"></span></span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="apiKeyLabel">API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint" id="apiKeyHint">火山方舟的 API Key</span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="modelNameLabel">推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint" id="modelNameHint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
+<div style="padding:2px 0 6px"><button class="test-conn-btn" id="testConnBtn" type="button">测试连接</button><div class="test-conn-result" id="testConnResult"></div></div>
 <div class="toggle-row-dark"><label for="streamToggleDark">流式输出</label><span class="toggle-dark"><input type="checkbox" id="streamToggleDark" /><span class="slider"></span></span></div><div class="toggle-row-dark"><label for="concurrencyLimit">并发数</label><select id="concurrencyLimit" style="width:56px;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
 <div class="toggle-row-dark"><label for="compressToggle">图片压缩</label><span class="toggle-dark"><input type="checkbox" id="compressToggle" checked /><span class="slider"></span></span></div>
 <div style="padding-left:4px" id="compressConfig"><div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap">最大边长</span><select id="maxDimension" style="flex:1;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:11px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="768">768px</option><option value="1024" selected>1024px</option><option value="1536">1536px</option><option value="2048">2048px</option></select></div></div>
@@ -665,6 +671,43 @@ function pae(st,bd,mv){
   if(em)return"API 错误 ("+ec+"): "+em;
   return"请求失败 (HTTP "+st+")";
 }
+async function testConnection(){
+  var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
+  var out=document.getElementById("testConnResult"),btn=document.getElementById("testConnBtn");
+  function show(msg,cls){if(out){out.className="test-conn-result"+(cls?" "+cls:"");out.textContent=msg;}}
+  if(!ep||!key||!model){show("请先填写 API 地址、API Key 和模型标识","err");return;}
+  var useProxy=effectiveViaProxy(),authStyle=effectiveAuthStyle();
+  var route=useProxy?"代理转发":"直连";
+  var body={model:model,messages:[{role:"user",content:"ping"}],max_tokens:8,stream:false};
+  var url=ep,headers={"Content-Type":"application/json"};
+  if(useProxy){body.api_key=key;body.target_url=ep;body.auth_style=authStyle;url="/api/chat";}
+  else{var ah=authHeaderFor(authStyle);headers[ah.name]=ah.value(key);}
+  if(btn){btn.disabled=true;btn.textContent="测试中...";}
+  show("正在通过"+route+"测试 "+model+" ...","");
+  var t0=Date.now();
+  try{
+    var ac=new AbortController();var tm=setTimeout(function(){ac.abort();},30000);
+    var resp=await fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body),signal:ac.signal});
+    clearTimeout(tm);
+    var ms=Date.now()-t0,txt=await resp.text(),j=null;
+    try{j=JSON.parse(txt);}catch(e){}
+    if(resp.ok){
+      var cnt=j&&j.choices&&j.choices[0]&&(j.choices[0].message||j.choices[0].delta)&&(j.choices[0].message||j.choices[0].delta).content;
+      var tk=j&&j.usage&&j.usage.total_tokens;
+      if(cnt!=null&&cnt!=="")show("连接正常（"+route+"，"+(ms/1000).toFixed(1)+"s）。模型已返回内容"+(tk?("，用量 "+tk+" tokens"):""),"ok");
+      else show("已连通（"+route+"，"+(ms/1000).toFixed(1)+"s），但响应不是标准 chat/completions 结构，请确认地址指向的是对话补全接口"+"\n"+"响应片段: "+String(txt).slice(0,200),"warn");
+    }else{
+      var pb=j||(txt?{error:String(txt).slice(0,300)}:null);
+      show("连接失败（"+route+"，HTTP "+resp.status+"）"+"\n"+pae(resp.status,pb,model),"err");
+    }
+  }catch(err){
+    var msg=(err&&err.name==="AbortError")?"请求超时（30s）":(err&&err.message||"未知错误");
+    show("请求未成功（"+route+"）："+msg+"\n"+"若为 CORS 错误，请打开「通过代理转发」，或把该域名加入 PROXY_ALLOWED_HOSTS","err");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="测试连接";}
+  }
+}
+
 async function callAPI(du,prompt,us){
   var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
   if(!ep||!key||!model)throw new Error("请先完善 API 配置");
@@ -798,7 +841,7 @@ exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typ
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",function(){writeLS("custom_use_proxy",this.checked?"true":"false");});var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",function(){writeLS("custom_auth_style",this.value);});applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}var tcBtnEl=document.getElementById("testConnBtn");if(tcBtnEl)tcBtnEl.addEventListener("click",testConnection);var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",function(){writeLS("custom_use_proxy",this.checked?"true":"false");});var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",function(){writeLS("custom_auth_style",this.value);});applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
 var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
