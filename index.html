@@ -174,6 +174,8 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <div class="collapsible-header" id="apiToggle"><span class="section-label" style="cursor:pointer">API 配置</span><span class="collapsible-arrow" id="apiArrow">›</span></div>
 <div class="collapsible-body" id="apiBody"><div class="collapsible-body-inner">
 <div class="field-dark" style="margin-bottom:10px"><label>API 地址</label><input id="apiEndpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions" /></div>
+<div class="field-dark" id="authStyleRow" style="margin-bottom:10px;display:none"><label>鉴权方式</label><select id="authStyleSelect"><option value="bearer">Authorization: Bearer</option><option value="x-api-key">x-api-key</option><option value="api-key">api-key</option></select><span class="hint">按服务商文档选择</span></div>
+<div class="toggle-row-dark" id="proxyToggleRow" style="display:none"><label for="useProxyToggle">通过代理转发</label><span class="toggle-dark"><input type="checkbox" id="useProxyToggle" checked /><span class="slider"></span></span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="apiKeyLabel">API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint" id="apiKeyHint">火山方舟的 API Key</span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="modelNameLabel">推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint" id="modelNameHint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
 <div class="toggle-row-dark"><label for="streamToggleDark">流式输出</label><span class="toggle-dark"><input type="checkbox" id="streamToggleDark" /><span class="slider"></span></span></div><div class="toggle-row-dark"><label for="concurrencyLimit">并发数</label><select id="concurrencyLimit" style="width:56px;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
@@ -480,7 +482,9 @@ var providerConfig={
     modelFieldPlaceholder:"ep-xxxxx",
     modelFieldHint:"禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID",
     apiKeyHint:"火山方舟的 API Key",
-    hasModelSelect:true
+    hasModelSelect:true,
+    authStyle:"bearer",
+    proxyForced:true
   },
   custom:{
     label:"自定义（OpenAI 兼容）",
@@ -493,7 +497,9 @@ var providerConfig={
     modelFieldPlaceholder:"例如 deepseek-chat",
     modelFieldHint:"填写服务商文档里的模型 ID，需支持图片输入",
     apiKeyHint:"该服务商的 API Key",
-    hasModelSelect:false
+    hasModelSelect:false,
+    authStyle:"bearer",
+    proxyForced:false
   }
 };
 var currentProvider="ark";
@@ -509,17 +515,22 @@ function providerCfg(){return providerConfig[currentProvider]||providerConfig.ar
 function readLS(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function writeLS(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function currentModelCfg(){return modelConfig[currentModel]||modelConfig["doubao-seed-2.1-turbo"];}
+function effectiveViaProxy(){var p=providerCfg();if(p.proxyForced)return true;var cb=document.getElementById("useProxyToggle");if(cb)return !!cb.checked;return !!p.viaProxy;}
+function effectiveAuthStyle(){if(currentProvider==="custom"){var s=document.getElementById("authStyleSelect");if(s&&s.value)return s.value;var st=readLS("custom_auth_style");if(st)return st;}return providerCfg().authStyle||"bearer";}
+function authHeaderFor(style){if(style==="x-api-key")return{name:"x-api-key",value:function(k){return k;}};if(style==="api-key")return{name:"api-key",value:function(k){return k;}};return{name:"Authorization",value:function(k){return "Bearer "+k;}};}
 function saveProviderFields(){
   var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
   if(ae)writeLS(p.endpointStorageKey,ae.value.trim());
   if(ak)writeLS(p.keyStorageKey,ak.value);
   if(mn)writeLS(currentModelCfg().endpointKey,mn.value.trim());
+  if(currentProvider==="custom"){var pt=document.getElementById("useProxyToggle");if(pt)writeLS("custom_use_proxy",pt.checked?"true":"false");var as2=document.getElementById("authStyleSelect");if(as2&&as2.value)writeLS("custom_auth_style",as2.value);}
 }
 function loadProviderFields(){
   var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
   if(ae){var se=readLS(p.endpointStorageKey);ae.value=(se!==null&&se!=="")?se:p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
   if(ak){var sk=readLS(p.keyStorageKey);ak.value=sk!==null?sk:"";}
   if(mn){var mc=currentModelCfg(),sm=readLS(mc.endpointKey);mn.value=(sm!==null&&sm!=="")?sm:(mc.endpointDefault||"");}
+  if(currentProvider==="custom"){var ptl=document.getElementById("useProxyToggle");if(ptl){var spl=readLS("custom_use_proxy");ptl.checked=(spl===null)?true:(spl==="true");}var asl=document.getElementById("authStyleSelect");if(asl){var sal=readLS("custom_auth_style");asl.value=sal||"bearer";}}
 }
 function applyProviderUI(){
   var p=providerCfg();
@@ -530,6 +541,8 @@ function applyProviderUI(){
   var mn=document.getElementById("modelName");if(mn)mn.placeholder=p.modelFieldPlaceholder;
   var mh=document.getElementById("modelNameHint");if(mh)mh.textContent=p.modelFieldHint;
   var kh=document.getElementById("apiKeyHint");if(kh)kh.textContent=p.apiKeyHint;
+  var asr=document.getElementById("authStyleRow");if(asr)asr.style.display=p.proxyForced?"none":"";
+  var ptr=document.getElementById("proxyToggleRow");if(ptr)ptr.style.display=p.proxyForced?"none":"";
 }
 function setProvider(id){
   if(!providerConfig[id]||id===currentProvider)return;
@@ -651,13 +664,14 @@ function pae(st,bd,mv){
 }
 async function callAPI(du,prompt,us){
   var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
-  if(ep.includes("ark.cn-beijing.volces.com")){ep="/api/chat";}
   if(!ep||!key||!model)throw new Error("请先完善 API 配置");
+  var useProxy=effectiveViaProxy(),authStyle=effectiveAuthStyle();
   var cfg=modelConfig[currentModel];
   var to=cfg.timeout;
   var mt=cfg.maxTokens;
   var body={model:model,messages:[{role:"user",content:[{type:"text",text:prompt}].concat(Array.isArray(du)?du.map(function(u){return{type:"image_url",image_url:{url:u,detail:"high"}};}):[{type:"image_url",image_url:{url:du,detail:"high"}}])}],max_tokens:mt,temperature:0.3,stream:us};
-  if(ep==="/api/chat"){body.api_key=key;}if(cfg.thinkingTypeDisabled){body.thinking_type="disabled";}
+  if(useProxy){body.api_key=key;body.target_url=ep;body.auth_style=authStyle;ep="/api/chat";}
+  if(cfg.thinkingTypeDisabled){body.thinking_type="disabled";}
   var le=null;
   for(var a=0;a<=RETRY_CONFIG.maxRetries;a++){
     if(cancelRequested)throw new Error("已取消");
@@ -672,7 +686,7 @@ async function callAPI(du,prompt,us){
     var t=setTimeout(function(){c.abort();},to);
     try{
       var fetchHeaders={"Content-Type":"application/json"};
-      if(ep!=="/api/chat"){fetchHeaders["Authorization"]="Bearer "+key;}
+      if(ep!=="/api/chat"){var ah=authHeaderFor(authStyle);fetchHeaders[ah.name]=ah.value(key);}
       var resp=await fetch(ep,{method:"POST",headers:fetchHeaders,body:JSON.stringify(body),signal:c.signal});
       clearTimeout(t);
       activeControllers=activeControllers.filter(function(ac){return ac!==c;});
@@ -780,7 +794,7 @@ exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typ
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",function(){writeLS("custom_use_proxy",this.checked?"true":"false");});var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",function(){writeLS("custom_auth_style",this.value);});applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
 var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");

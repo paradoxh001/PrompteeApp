@@ -1,21 +1,40 @@
 const http=require('http'),https=require('https'),fs=require('fs'),path=require('path');
+
+let corePromise=null,rateCheck=null;
+function loadCore(){ if(!corePromise) corePromise=import('./lib/proxy-core.js'); return corePromise; }
+
 const s=http.createServer((q,r)=>{
   const cors=(h)=>{h['Access-Control-Allow-Origin']='*';h['Access-Control-Allow-Headers']='*';h['Access-Control-Allow-Methods']='GET,POST,OPTIONS';return h;};
   if(q.method==='OPTIONS'){r.writeHead(204,cors({}));r.end();return;}
   if(q.url==='/api/chat'&&q.method==='POST'){
     let body='';
     q.on('data',c=>body+=c);
-    q.on('end',()=>{
+    q.on('end',async()=>{
       let parsed;
       try{parsed=JSON.parse(body);}catch(e){r.writeHead(400,cors({'Content-Type':'application/json'}));r.end(JSON.stringify({error:'Invalid JSON'}));return;}
-      const apiKey=parsed.api_key||'';
-      delete parsed.api_key;
-      const data=JSON.stringify(parsed);
-      const opts={hostname:'ark.cn-beijing.volces.com',path:'/api/v3/chat/completions',method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey,'Content-Length':Buffer.byteLength(data)}};
-      const req=https.request(opts,res=>{r.writeHead(res.statusCode,cors({'Content-Type':res.headers['content-type']||'application/json'}));res.pipe(r);});
-      req.on('error',e=>{r.writeHead(502,cors({'Content-Type':'application/json'}));r.end(JSON.stringify({error:e.message}));});
-      req.end(data);
+
+      let core;
+      try{ core=await loadCore(); }
+      catch(e){ r.writeHead(500,cors({'Content-Type':'application/json'})); r.end(JSON.stringify({error:'proxy core unavailable'})); return; }
+      if(!rateCheck)rateCheck=core.createRateLimiter({limit:120,windowMs:60000});
+
+      const client=(q.headers['x-forwarded-for']||q.socket.remoteAddress||'unknown').toString().split(',')[0].trim();
+      const gate=rateCheck(client);
+      if(!gate.allowed){r.writeHead(429,cors({'Content-Type':'application/json','Retry-After':String(gate.retryAfter)}));r.end(JSON.stringify({error:'请求过于频繁，请稍后重试'}));return;}
+
+      const parts=core.splitProxyPayload(parsed);
+      const allowedHosts=core.resolveAllowedHosts(process.env.PROXY_ALLOWED_HOSTS);
+      const target=core.validateTarget(parts.targetUrl,allowedHosts);
+      if(!target.ok){r.writeHead(target.status,cors({'Content-Type':'application/json'}));r.end(JSON.stringify({error:target.error}));return;}
+
+      const auth=core.resolveAuth(parts.authStyle,parts.apiKey);
+      const data=JSON.stringify(parts.payload);
+      const u=new URL(target.url);
+      const opts={hostname:u.hostname,path:u.pathname+u.search,method:'POST',
+        headers:{'Content-Type':'application/json',[auth.name]:auth.value,'Content-Length':Buffer.byteLength(data)}};
+      const preq=https.request(opts,pres=>{r.writeHead(pres.statusCode,cors({'Content-Type':pres.headers['content-type']||'application/json'}));pres.pipe(r);});
+      preq.on('error',e=>{r.writeHead(502,cors({'Content-Type':'application/json'}));r.end(JSON.stringify({error:e.message}));});
+      preq.end(data);
     });
     return;
   }
