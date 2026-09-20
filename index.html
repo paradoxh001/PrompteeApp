@@ -946,7 +946,7 @@ async function testConnection(){
 
     }else{
       var pb=j||(txt?{error:String(txt).slice(0,300)}:null);
-      show("连接失败（"+route+"，HTTP "+resp.status+"）"+"\n"+pae(resp.status,pb,model),"err");
+      show("连接失败（"+route+"，HTTP "+resp.status+"）"+"\n"+"目标: "+ep+"\n"+pae(resp.status,pb,model),"err");
     }
   }catch(err){
     var msg=(err&&err.name==="AbortError")?"请求超时（30s）":(err&&err.message||"未知错误");
