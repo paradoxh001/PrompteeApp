@@ -179,7 +179,7 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <div class="collapsible-header" id="apiToggle"><span class="section-label" style="cursor:pointer">API 配置</span><span class="collapsible-arrow" id="apiArrow">›</span></div>
 <div class="collapsible-body" id="apiBody"><div class="collapsible-body-inner">
 <div class="field-dark" style="margin-bottom:10px"><label>API 地址</label><input id="apiEndpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions" /></div>
-<div class="field-dark" id="authStyleRow" style="margin-bottom:10px;display:none"><label>鉴权方式</label><select id="authStyleSelect"><option value="bearer">Authorization: Bearer</option><option value="x-api-key">x-api-key</option><option value="api-key">api-key</option></select><span class="hint">按服务商文档选择</span></div>
+<div class="field-dark" id="authStyleRow" style="margin-bottom:10px;display:none"><label>鉴权方式</label><select id="authStyleSelect"><option value="bearer">Authorization: Bearer</option><option value="x-api-key">x-api-key</option><option value="api-key" selected>api-key</option></select><span class="hint">按服务商文档选择</span></div>
 <div class="toggle-row-dark" id="proxyToggleRow" style="display:none"><label for="useProxyToggle">通过代理转发</label><span class="toggle-dark"><input type="checkbox" id="useProxyToggle" checked /><span class="slider"></span></span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="apiKeyLabel">API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint" id="apiKeyHint">火山方舟的 API Key</span></div>
 <div class="field-dark" style="margin-bottom:10px"><label id="modelNameLabel">推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint" id="modelNameHint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
@@ -518,7 +518,7 @@ var providerConfig={
     modelFieldHint:"填写服务商文档里的模型 ID，需支持图片输入",
     apiKeyHint:"该服务商的 API Key",
     hasModelSelect:false,
-    authStyle:"bearer",
+    authStyle:"api-key",
     proxyForced:false
   }
 };
@@ -550,7 +550,7 @@ function loadProviderFields(){
   if(ae){var se=readLS(p.endpointStorageKey);ae.value=(se!==null&&se!=="")?se:p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
   if(ak){var sk=readLS(p.keyStorageKey);ak.value=sk!==null?sk:"";}
   if(mn){var mc=currentModelCfg(),sm=readLS(mc.endpointKey);mn.value=(sm!==null&&sm!=="")?sm:(mc.endpointDefault||"");}
-  if(currentProvider==="custom"){var ptl=document.getElementById("useProxyToggle");if(ptl){var spl=readLS("custom_use_proxy");ptl.checked=(spl===null)?true:(spl==="true");}var asl=document.getElementById("authStyleSelect");if(asl){var sal=readLS("custom_auth_style");asl.value=sal||"bearer";}}
+  if(currentProvider==="custom"){var ptl=document.getElementById("useProxyToggle");if(ptl){var spl=readLS("custom_use_proxy");ptl.checked=(spl===null)?true:(spl==="true");}var asl=document.getElementById("authStyleSelect");if(asl){var sal=readLS("custom_auth_style");asl.value=sal||"api-key";}}
 }
 function applyProviderUI(){
   var p=providerCfg();
