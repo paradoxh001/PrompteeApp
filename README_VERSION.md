@@ -52,10 +52,39 @@
 | Seed2.1 Turbo（默认） | ep-20260708192217-zfkkf |
 | Doubao Seed 2.1 Pro | ep-20260707145037-qbhn8 |
 
+## 多服务商配置（v2.0-dev）
+
+### 服务商
+- **火山方舟 ARK**：默认，使用 ep-xxx 接入点 ID，强制走代理
+- **自定义（OpenAI 兼容）**：可填任意 OpenAI 兼容服务商的地址与模型名
+
+### 两种调用方式
+1. **代理转发**：浏览器 → 本站 /api/chat → 服务商。可绕开 CORS，但目标域名必须在白名单内
+2. **直连**：浏览器 → 服务商。需要在页面里把「通过代理转发」关闭，且对方必须允许浏览器跨域
+
+判断配置是否可用：在 API 配置里点「测试连接」，它会用与真实生成完全相同的链路发一条最小请求，并回显真实错误原因。
+
+### 代理白名单
+默认允许以下域名：
+ark.cn-beijing.volces.com、api.deepseek.com、api.moonshot.cn、dashscope.aliyuncs.com、
+open.bigmodel.cn、api.siliconflow.cn、api.stepfun.com、openrouter.ai、api.openai.com、
+api.minimaxi.com、api.apilio.ai
+
+要新增域名，两种方式：
+- 在 Vercel 项目设置里添加环境变量 `PROXY_ALLOWED_HOSTS`，值为逗号分隔的域名，然后重新部署
+- 或直接修改 `lib/proxy-core.js` 里的 DEFAULT_ALLOWED_HOSTS
+
+### 安全约束（请勿随意放宽）
+- 只允许 https，且拒绝内网地址（127/10/192.168/169.254/172.16-31 等），防止 SSRF
+- 请不要把代理改成「转发任意地址」，否则会成为开放代理
+- 代理按来源 IP 限流，Vercel 函数另有约 4.5MB 请求体上限，大图建议压缩后再传
+
+### 鉴权方式
+自定义服务商可选 Authorization: Bearer、x-api-key、api-key 三种写法，按服务商文档选择。
 ## 后续开发注意事项
 
 ### 关键文件说明
-- **index.html** — 所有前端代码（HTML + CSS + JS），修改时注意保持三栏 23%/54%/23% 布局
+- **index.html** — 所有前端代码（HTML + CSS + JS），修改时注意保持三栏 24%/48%/28% 布局
 - **server.js** — Node.js 代理，仅做请求转发，一般不修改
 - **start_server.bat** — 启动脚本，优先使用 PATH 中的 node，兜底用 Codex 运行时
 
@@ -71,7 +100,7 @@
 3. 模型支持 	hinkingTypeDisabled:true 标记来禁用深度思考
 
 ### 兼容性
-- CSS 使用 23%/54%/23% 三栏 flex 布局，768px 以下纵向堆叠
+- CSS 使用 24%/48%/28% 三栏 flex 布局，768px 以下纵向堆叠
 - 所有开关/配置持久化在 localStorage，key 前缀统一管理
 - 图片压缩使用 canvas，不支持 IE 等旧浏览器
 
