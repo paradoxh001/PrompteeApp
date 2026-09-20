@@ -645,10 +645,17 @@ function syncProfileIndicators(refreshList){
 }
 function applyActiveProfile(){
   var pr=activeProfile(),p=providerConfig[pr.provider]||providerConfig.ark;
+  if(!providerConfig[pr.provider]){pr.provider="ark";p=providerConfig.ark;persistVault();}
   currentProvider=pr.provider;
   currentModel=(pr.provider==="ark")?(pr.arkModel||"doubao-seed-2.1-turbo"):"custom";
   if(!modelConfig[currentModel])currentModel="doubao-seed-2.1-turbo";
-  var ms=document.getElementById("modelSelect");if(ms)ms.value=currentModel;
+  var ms=document.getElementById("modelSelect");
+  if(ms&&p.hasModelSelect){
+    var validModel=false;
+    for(var oi=0;oi<ms.options.length;oi++){if(ms.options[oi].value===currentModel){validModel=true;break;}}
+    if(!validModel){currentModel="doubao-seed-2.1-turbo";pr.arkModel=currentModel;persistVault();}
+    ms.value=currentModel;
+  }
   var ae=document.getElementById("apiEndpoint");if(ae){ae.value=pr.endpoint||p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
   var ak=document.getElementById("apiKey");if(ak)ak.value=pr.key||"";
   var mn=document.getElementById("modelName");
