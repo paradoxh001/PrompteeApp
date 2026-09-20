@@ -34,6 +34,9 @@ body{display:flex;flex-direction:column}
 .test-conn-btn:disabled{opacity:.55;cursor:not-allowed}
 .test-conn-result{margin-top:6px;font-size:11px;line-height:1.55;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-wrap}
 .test-conn-result.ok{color:#34c759}.test-conn-result.err{color:#ff6b6b}.test-conn-result.warn{color:#ffb340}
+.prof-btn{width:32px;height:32px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);cursor:pointer;transition:.2s;padding:0}
+.prof-btn:hover{border-color:rgba(255,255,255,.34);background:rgba(255,255,255,.12);color:#fff}
+.prof-btn.danger:hover{border-color:#ff6b6b;color:#ff6b6b;background:rgba(255,107,107,.12)}
 .section{margin-bottom:20px}
 .section:last-child{margin-bottom:0}
 .section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
@@ -165,6 +168,7 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <header class="header"><div style="display:flex;align-items:center;gap:16px"><img src="promptee.png" class="logo" alt="Promptee" /><h1>Promptee</h1><span class="badge" id="providerBadge">火山方舟 ARK</span></div><div class="header-actions"><button class="header-btn" id="clearAllBtn">清空</button></div></header>
 <div class="workspace">
 <aside class="panel panel-left"><div class="panel-header">生成词设置</div><div class="panel-fixed">
+<div class="section"><div class="section-label">配置档案</div><div style="display:flex;gap:6px;align-items:center"><select id="profileSelect" style="flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"></select><button class="prof-btn" id="profileAddBtn" type="button" title="新建配置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button><button class="prof-btn danger" id="profileDelBtn" type="button" title="删除当前配置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div><div class="field-dark" style="margin-top:8px"><input id="profileName" placeholder="配置名称" /></div></div>
 <div class="section"><div class="section-label">服务商</div><select id="providerSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="ark">火山方舟 ARK</option><option value="custom">自定义（OpenAI 兼容）</option></select></div>
 <div class="section" id="modelSelectSection"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
 <div style="height:1px;background:rgba(255,255,255,.1);margin-bottom:6px"></div><div class="section"><div class="section-label">模式选择</div><div class="mode-tabs" style="display:flex;gap:4px;margin-bottom:8px"><label class="tpl-btn" id="modeSingle" for="modeSingleRadio">单图解析</label><label class="tpl-btn" id="modeDual" for="modeDualRadio">双图融合</label></div><div id="modeDualHint" style="display:none;font-size:11px;color:rgba(255,255,255,.45);line-height:1.4;padding-bottom:4px">上传参考图和目标图，融合生成新图像</div></div><div id="dualBatchRow" style="display:none"><div class="section-label" style="margin-top:6px">融合方式</div><div class="seg-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"><button class="seg-btn active" id="batchPairBtn" type="button"><img src="icon-pair.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>1 + 1 单组</span></button><button class="seg-btn" id="batchEnvBtn" type="button"><img src="icon-env-multi.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>1 主体 + N 环境</span></button><button class="seg-btn" id="batchSubjBtn" type="button"><img src="icon-subj-multi.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>N 主体 + 1 环境</span></button></div></div>
@@ -523,35 +527,109 @@ var providerConfig={
   }
 };
 var currentProvider="ark";
-try{var sp=localStorage.getItem("promptee_provider");if(sp&&providerConfig[sp])currentProvider=sp;}catch(e){}
+var VAULT_KEY="promptee_vault";
+function newPid(){return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function defaultArkEps(){var m={};for(var k in modelConfig){if(modelConfig[k]&&modelConfig[k].endpointDefault)m[k]=modelConfig[k].endpointDefault;}return m;}
+function makeArkProfile(nm){return {id:newPid(),name:nm||"火山方舟",provider:"ark",endpoint:providerConfig.ark.defaultEndpoint,key:"",arkModel:"doubao-seed-2.1-turbo",arkEps:defaultArkEps(),authStyle:"bearer",useProxy:true};}
+function makeCustomProfile(nm){return {id:newPid(),name:nm||"自定义配置",provider:"custom",endpoint:"",key:"",model:"",authStyle:"api-key",useProxy:true};}
+function migrateVault(){
+  var a=makeArkProfile("火山方舟");
+  var ae=readLS("ark_endpoint");if(ae)a.endpoint=ae;
+  var ak=readLS("ark_api_key");if(ak)a.key=ak;
+  var am=readLS("ark_model_type");if(am&&modelConfig[am])a.arkModel=am;
+  for(var k in modelConfig){if(modelConfig[k]&&modelConfig[k].endpointKey){var ev=readLS(modelConfig[k].endpointKey);if(ev)a.arkEps[k]=ev;}}
+  var c=makeCustomProfile("自定义服务商");
+  var ce=readLS("custom_endpoint");if(ce)c.endpoint=ce;
+  var ck=readLS("custom_api_key");if(ck)c.key=ck;
+  var cm=readLS("custom_model");if(cm)c.model=cm;
+  var ca=readLS("custom_auth_style");if(ca)c.authStyle=ca;
+  var cp=readLS("custom_use_proxy");if(cp!==null)c.useProxy=(cp==="true");
+  var act=(readLS("promptee_provider")==="custom")?c.id:a.id;
+  return {v:1,active:act,profiles:[a,c]};
+}
+function loadVault(){
+  var raw=readLS(VAULT_KEY);
+  if(raw){try{var p=JSON.parse(raw);if(p&&p.profiles&&p.profiles.length){var hit=false;for(var i=0;i<p.profiles.length;i++){if(p.profiles[i].id===p.active)hit=true;}if(!hit)p.active=p.profiles[0].id;return p;}}catch(e){}}
+  var mg=migrateVault();writeLS(VAULT_KEY,JSON.stringify(mg));return mg;
+}
+function persistVault(){writeLS(VAULT_KEY,JSON.stringify(vault));}
+function activeProfile(){for(var i=0;i<vault.profiles.length;i++){if(vault.profiles[i].id===vault.active)return vault.profiles[i];}vault.active=vault.profiles[0].id;return vault.profiles[0];}
+function renderProfileSelect(){
+  var sel=document.getElementById("profileSelect");if(!sel)return;var h="";
+  for(var i=0;i<vault.profiles.length;i++){var pr=vault.profiles[i];var nm=String(pr.name||"未命名").replace(/&/g,"&amp;").replace(/</g,"&lt;");h+='<option value="'+pr.id+'">'+nm+" · "+(pr.provider==="ark"?"方舟":"自定义")+"</option>";}
+  sel.innerHTML=h;sel.value=vault.active;
+}
+function saveActiveProfile(){
+  var pr=activeProfile(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
+  if(ae)pr.endpoint=ae.value.trim();
+  if(ak)pr.key=ak.value;
+  if(mn){
+    if(pr.provider==="ark"){pr.arkEps=pr.arkEps||{};pr.arkEps[pr.arkModel||"doubao-seed-2.1-turbo"]=mn.value.trim();}
+    else pr.model=mn.value.trim();
+  }
+  if(pr.provider==="custom"){
+    var pt=document.getElementById("useProxyToggle");if(pt)pr.useProxy=!!pt.checked;
+    var as=document.getElementById("authStyleSelect");if(as&&as.value)pr.authStyle=as.value;
+  }else{pr.useProxy=true;pr.authStyle="bearer";}
+  persistVault();
+}
+function applyActiveProfile(){
+  var pr=activeProfile(),p=providerConfig[pr.provider]||providerConfig.ark;
+  currentProvider=pr.provider;
+  currentModel=(pr.provider==="ark")?(pr.arkModel||"doubao-seed-2.1-turbo"):"custom";
+  if(!modelConfig[currentModel])currentModel="doubao-seed-2.1-turbo";
+  var ms=document.getElementById("modelSelect");if(ms)ms.value=currentModel;
+  var ae=document.getElementById("apiEndpoint");if(ae){ae.value=pr.endpoint||p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
+  var ak=document.getElementById("apiKey");if(ak)ak.value=pr.key||"";
+  var mn=document.getElementById("modelName");
+  if(mn){
+    if(pr.provider==="ark"){var ep=(pr.arkEps||{})[currentModel];mn.value=ep||(modelConfig[currentModel]||{}).endpointDefault||"";}
+    else mn.value=pr.model||"";
+  }
+  var pt=document.getElementById("useProxyToggle");if(pt)pt.checked=(pr.useProxy!==false);
+  var as=document.getElementById("authStyleSelect");if(as)as.value=pr.authStyle||"api-key";
+  var pn=document.getElementById("profileName");if(pn)pn.value=pr.name||"";
+  var ps=document.getElementById("profileSelect");if(ps)ps.value=pr.id;
+  applyProviderUI();
+}
+function switchProfile(id){
+  if(!id||id===vault.active)return;
+  saveActiveProfile();vault.active=id;persistVault();renderProfileSelect();applyActiveProfile();
+  st("已切换到配置："+(activeProfile().name||"未命名"));
+}
+function addProfile(provider){
+  saveActiveProfile();
+  var n=vault.profiles.length+1;
+  var pr=(provider==="ark")?makeArkProfile("方舟 "+n):makeCustomProfile("配置 "+n);
+  vault.profiles.push(pr);vault.active=pr.id;persistVault();renderProfileSelect();applyActiveProfile();
+  var pn=document.getElementById("profileName");if(pn){pn.focus();pn.select();}
+  st("已新建配置，可修改名称与参数");
+}
+function deleteProfile(){
+  if(vault.profiles.length<=1){st("至少保留一个配置");return;}
+  var pr=activeProfile();
+  if(!confirm("确定删除配置「"+(pr.name||"未命名")+"」？"))return;
+  var keep=[];for(var i=0;i<vault.profiles.length;i++){if(vault.profiles[i].id!==pr.id)keep.push(vault.profiles[i]);}
+  vault.profiles=keep;vault.active=keep[0].id;persistVault();renderProfileSelect();applyActiveProfile();st("配置已删除");
+}
+function renameProfile(name){
+  var pr=activeProfile();pr.name=(name||"").trim()||"未命名";persistVault();renderProfileSelect();
+}
 try{var modelConfig={
   "doubao-vision-pro-32k":{label:"Doubao-vision-pro-32k",endpointKey:"ark_ep_vp32k",endpointDefault:"ep-20260706162916-cwsp4",maxTokens:12288,timeout:60000},
   "doubao-seed-2.1-turbo":{label:"Seed2.1 Turbo",endpointKey:"ark_ep_seed21t",endpointDefault:"ep-20260708192217-zfkkf",maxTokens:8192,timeout:45000,thinkingTypeDisabled:true},
   "doubao-seed-2.1-pro":{label:"Doubao Seed 2.1 Pro",endpointKey:"ark_ep_seed21",endpointDefault:"ep-20260707145037-qbhn8",maxTokens:4500,timeout:120000,thinkingTypeDisabled:true},
   "custom":{label:"自定义模型",endpointKey:"custom_model",endpointDefault:"",maxTokens:4096,timeout:120000}
 };}catch(e){}
+var vault=loadVault();
 if(currentProvider==="custom")currentModel="custom";
-function providerCfg(){return providerConfig[currentProvider]||providerConfig.ark;}
+function providerCfg(){var pr=activeProfile();return providerConfig[pr.provider]||providerConfig.ark;}
 function readLS(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function writeLS(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function currentModelCfg(){return modelConfig[currentModel]||modelConfig["doubao-seed-2.1-turbo"];}
 function effectiveViaProxy(){var p=providerCfg();if(p.proxyForced)return true;var cb=document.getElementById("useProxyToggle");if(cb)return !!cb.checked;return !!p.viaProxy;}
-function effectiveAuthStyle(){if(currentProvider==="custom"){var s=document.getElementById("authStyleSelect");if(s&&s.value)return s.value;var st=readLS("custom_auth_style");if(st)return st;}return providerCfg().authStyle||"bearer";}
+function effectiveAuthStyle(){var p=providerCfg();if(p.proxyForced)return p.authStyle||"bearer";var s=document.getElementById("authStyleSelect");if(s&&s.value)return s.value;return p.authStyle||"api-key";}
 function authHeaderFor(style){if(style==="x-api-key")return{name:"x-api-key",value:function(k){return k;}};if(style==="api-key")return{name:"api-key",value:function(k){return k;}};return{name:"Authorization",value:function(k){return "Bearer "+k;}};}
-function saveProviderFields(){
-  var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
-  if(ae)writeLS(p.endpointStorageKey,ae.value.trim());
-  if(ak)writeLS(p.keyStorageKey,ak.value);
-  if(mn)writeLS(currentModelCfg().endpointKey,mn.value.trim());
-  if(currentProvider==="custom"){var pt=document.getElementById("useProxyToggle");if(pt)writeLS("custom_use_proxy",pt.checked?"true":"false");var as2=document.getElementById("authStyleSelect");if(as2&&as2.value)writeLS("custom_auth_style",as2.value);}
-}
-function loadProviderFields(){
-  var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
-  if(ae){var se=readLS(p.endpointStorageKey);ae.value=(se!==null&&se!=="")?se:p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
-  if(ak){var sk=readLS(p.keyStorageKey);ak.value=sk!==null?sk:"";}
-  if(mn){var mc=currentModelCfg(),sm=readLS(mc.endpointKey);mn.value=(sm!==null&&sm!=="")?sm:(mc.endpointDefault||"");}
-  if(currentProvider==="custom"){var ptl=document.getElementById("useProxyToggle");if(ptl){var spl=readLS("custom_use_proxy");ptl.checked=(spl===null)?true:(spl==="true");}var asl=document.getElementById("authStyleSelect");if(asl){var sal=readLS("custom_auth_style");asl.value=sal||"api-key";}}
-}
 function applyProviderUI(){
   var p=providerCfg();
   var ps=document.getElementById("providerSelect");if(ps)ps.value=currentProvider;
@@ -564,17 +642,16 @@ function applyProviderUI(){
   var asr=document.getElementById("authStyleRow");if(asr)asr.style.display=p.proxyForced?"none":"";
   var ptr=document.getElementById("proxyToggleRow");if(ptr)ptr.style.display=p.proxyForced?"none":"";
 }
-function setProvider(id){
-  if(!providerConfig[id]||id===currentProvider)return;
-  saveProviderFields();
-  currentProvider=id;
-  writeLS("promptee_provider",id);
-  currentModel=(id==="custom")?"custom":(readLS("ark_model_type")||"doubao-seed-2.1-turbo");
-  if(!modelConfig[currentModel])currentModel="doubao-seed-2.1-turbo";
-  var ms=document.getElementById("modelSelect");if(ms)ms.value=currentModel;
-  applyProviderUI();
-  loadProviderFields();
-  st("已切换到 "+providerConfig[id].label);
+function setProviderType(id){
+  var pr=activeProfile();
+  if(!providerConfig[id]||pr.provider===id)return;
+  saveActiveProfile();
+  pr.provider=id;
+  pr.endpoint=providerConfig[id].defaultEndpoint;
+  if(id==="ark"){pr.arkModel=pr.arkModel||"doubao-seed-2.1-turbo";pr.arkEps=pr.arkEps||defaultArkEps();pr.authStyle="bearer";pr.useProxy=true;}
+  else{pr.authStyle="api-key";pr.useProxy=(pr.useProxy!==false);}
+  persistVault();renderProfileSelect();applyActiveProfile();
+  st("已切换为 "+(providerConfig[id].badgeLabel||providerConfig[id].label)+"，地址已重置");
 }
 
 var mode="single";var replacementTarget="upper_clothing";var subjectRef=null;var envRef=null;var state={images:[],results:[],processing:false};
@@ -604,7 +681,7 @@ tplShoes.addEventListener("click",function(){currentTpl="shoes";tplShoes.classLi
 tplFullBody.addEventListener("click",function(){currentTpl="fullbody";tplFullBody.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyPromptData").value;});
  tplFullBodyShoes.addEventListener("click",function(){currentTpl="fullbodyShoes";tplFullBodyShoes.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyShoesPromptData").value;});
 function goDual(){mode="dual_reference";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.remove("active");if(md)md.classList.add("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="none";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="none";var du=document.getElementById("dualUploadArea");if(du)du.style.display="block";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="block";}function goSingle(){mode="single";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.add("active");if(md)md.classList.remove("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="";var du=document.getElementById("dualUploadArea");if(du)du.style.display="none";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="none";}tplSingleShoe.addEventListener("click",function(){currentTpl="singleShoe";tplSingleShoe.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("singleShoePromptData").value;});
-genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",function(){writeLS(providerCfg().keyStorageKey,apiKey.value);});apiEndpoint.addEventListener("input",function(){writeLS(providerCfg().endpointStorageKey,apiEndpoint.value);});modelName.addEventListener("input",function(){writeLS(currentModelCfg().endpointKey,modelName.value);});compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();genWordSection.style.display="none";if(currentTpl==="custom"){promptPreview.value="";}
+genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",saveActiveProfile);apiEndpoint.addEventListener("input",saveActiveProfile);modelName.addEventListener("input",saveActiveProfile);compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();genWordSection.style.display="none";if(currentTpl==="custom"){promptPreview.value="";}
 /* 批量模式需要接管粘贴目标，因此拦截旧的 paste 注册，统一由下方新逻辑处理 */
 
 function hf(files){
@@ -661,7 +738,7 @@ function deleteSelected(){var ids=Object.keys(selectedIds).filter(function(k){re
 function rm(id){
   var t1=[];for(var i=0;i<state.images.length;i++){if(state.images[i].id!==id)t1.push(state.images[i]);}state.images=t1;
   var t2=[];for(var j=0;j<state.results.length;j++){if(state.results[j].id!==id)t2.push(state.results[j]);}state.results=t2;
-  renderGrid();ui();saveResults();applyProviderUI();loadProviderFields();renderResults();
+  renderGrid();ui();saveResults();applyActiveProfile();renderResults();
 }
 function ui(){
   startBtn.disabled=state.images.length===0||state.processing;
@@ -855,7 +932,7 @@ exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typ
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}var tcBtnEl=document.getElementById("testConnBtn");if(tcBtnEl)tcBtnEl.addEventListener("click",testConnection);var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",function(){writeLS("custom_use_proxy",this.checked?"true":"false");});var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",function(){writeLS("custom_auth_style",this.value);});applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.addEventListener("change",function(){var pr=activeProfile();if(pr.provider!=="ark")return;var mn=document.getElementById("modelName");if(mn){pr.arkEps=pr.arkEps||{};pr.arkEps[pr.arkModel||currentModel]=mn.value.trim();}pr.arkModel=this.value;currentModel=this.value;persistVault();var ep=(pr.arkEps||{})[currentModel]||(modelConfig[currentModel]||{}).endpointDefault||"";if(mn)mn.value=ep;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.addEventListener("change",function(){setProviderType(this.value);});}var profSel=document.getElementById("profileSelect");if(profSel)profSel.addEventListener("change",function(){switchProfile(this.value);});var pAddBtn=document.getElementById("profileAddBtn");if(pAddBtn)pAddBtn.addEventListener("click",function(){addProfile(activeProfile().provider);});var pDelBtn=document.getElementById("profileDelBtn");if(pDelBtn)pDelBtn.addEventListener("click",deleteProfile);var pNameEl=document.getElementById("profileName");if(pNameEl)pNameEl.addEventListener("input",function(){renameProfile(this.value);});var tcBtnEl=document.getElementById("testConnBtn");if(tcBtnEl)tcBtnEl.addEventListener("click",testConnection);var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",saveActiveProfile);var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",saveActiveProfile);renderProfileSelect();applyActiveProfile();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
 var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
