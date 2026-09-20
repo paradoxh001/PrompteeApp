@@ -160,7 +160,8 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <header class="header"><div style="display:flex;align-items:center;gap:16px"><img src="promptee.png" class="logo" alt="Promptee" /><h1>Promptee</h1><span class="badge">火山方舟 ARK</span></div><div class="header-actions"><button class="header-btn" id="clearAllBtn">清空</button></div></header>
 <div class="workspace">
 <aside class="panel panel-left"><div class="panel-header">生成词设置</div><div class="panel-fixed">
-<div class="section"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
+<div class="section"><div class="section-label">服务商</div><select id="providerSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="ark">火山方舟 ARK</option><option value="custom">自定义（OpenAI 兼容）</option></select></div>
+<div class="section" id="modelSelectSection"><div class="section-label">模型选择</div><select id="modelSelect" style="width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="doubao-seed-2.1-turbo">Seed2.1 Turbo</option><option value="doubao-vision-pro-32k">Doubao-vision-pro-32k</option><option value="doubao-seed-2.1-pro">Doubao Seed 2.1 Pro</option></select></div>
 <div style="height:1px;background:rgba(255,255,255,.1);margin-bottom:6px"></div><div class="section"><div class="section-label">模式选择</div><div class="mode-tabs" style="display:flex;gap:4px;margin-bottom:8px"><label class="tpl-btn" id="modeSingle" for="modeSingleRadio">单图解析</label><label class="tpl-btn" id="modeDual" for="modeDualRadio">双图融合</label></div><div id="modeDualHint" style="display:none;font-size:11px;color:rgba(255,255,255,.45);line-height:1.4;padding-bottom:4px">上传参考图和目标图，融合生成新图像</div></div><div id="dualBatchRow" style="display:none"><div class="section-label" style="margin-top:6px">融合方式</div><div class="seg-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"><button class="seg-btn active" id="batchPairBtn" type="button"><img src="icon-pair.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>1 + 1 单组</span></button><button class="seg-btn" id="batchEnvBtn" type="button"><img src="icon-env-multi.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>1 主体 + N 环境</span></button><button class="seg-btn" id="batchSubjBtn" type="button"><img src="icon-subj-multi.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" /><span>N 主体 + 1 环境</span></button></div></div>
 <div id="replacementTargetRow" style="display:none"><div class="section-label" style="margin-top:6px">替换目标</div><div class="field-dark"><select id="replacementTarget"><option value="upper_clothing">上衣</option><option value="lower_clothing">下装</option><option value="shoes">鞋</option><option value="accessories">配饰</option><option value="full_outfit">整体穿搭</option></select></div></div>
 
@@ -173,8 +174,8 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <div class="collapsible-header" id="apiToggle"><span class="section-label" style="cursor:pointer">API 配置</span><span class="collapsible-arrow" id="apiArrow">›</span></div>
 <div class="collapsible-body" id="apiBody"><div class="collapsible-body-inner">
 <div class="field-dark" style="margin-bottom:10px"><label>API 地址</label><input id="apiEndpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions" /></div>
-<div class="field-dark" style="margin-bottom:10px"><label>API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint">火山方舟的 API Key</span></div>
-<div class="field-dark" style="margin-bottom:10px"><label>推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
+<div class="field-dark" style="margin-bottom:10px"><label id="apiKeyLabel">API Key</label><input id="apiKey" type="password" placeholder="输入 ARK_API_KEY" /><span class="hint" id="apiKeyHint">火山方舟的 API Key</span></div>
+<div class="field-dark" style="margin-bottom:10px"><label id="modelNameLabel">推理接入点 ID</label><input id="modelName" placeholder="ep-xxxxx" /><span class="hint" id="modelNameHint">禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID</span></div>
 <div class="toggle-row-dark"><label for="streamToggleDark">流式输出</label><span class="toggle-dark"><input type="checkbox" id="streamToggleDark" /><span class="slider"></span></span></div><div class="toggle-row-dark"><label for="concurrencyLimit">并发数</label><select id="concurrencyLimit" style="width:56px;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
 <div class="toggle-row-dark"><label for="compressToggle">图片压缩</label><span class="toggle-dark"><input type="checkbox" id="compressToggle" checked /><span class="slider"></span></span></div>
 <div style="padding-left:4px" id="compressConfig"><div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap">最大边长</span><select id="maxDimension" style="flex:1;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:11px;font-family:inherit;background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);outline:none;cursor:pointer"><option value="768">768px</option><option value="1024" selected>1024px</option><option value="1536">1536px</option><option value="2048">2048px</option></select></div></div>
@@ -467,11 +468,78 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script>
 
 var currentModel;try{currentModel=localStorage.getItem("ark_model_type");}catch(e){}currentModel=currentModel||"doubao-seed-2.1-turbo";
+var providerConfig={
+  ark:{
+    label:"火山方舟 ARK",
+    defaultEndpoint:"https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+    endpointPlaceholder:"https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+    endpointStorageKey:"ark_endpoint",
+    keyStorageKey:"ark_api_key",
+    modelFieldLabel:"推理接入点 ID",
+    modelFieldPlaceholder:"ep-xxxxx",
+    modelFieldHint:"禁止使用原始模型名，请在方舟后台为当前模型创建推理接入点后使用 ep-xxx ID",
+    apiKeyHint:"火山方舟的 API Key",
+    hasModelSelect:true
+  },
+  custom:{
+    label:"自定义（OpenAI 兼容）",
+    defaultEndpoint:"",
+    endpointPlaceholder:"https://api.example.com/v1/chat/completions",
+    endpointStorageKey:"custom_endpoint",
+    keyStorageKey:"custom_api_key",
+    modelFieldLabel:"模型名称",
+    modelFieldPlaceholder:"例如 deepseek-chat",
+    modelFieldHint:"填写服务商文档里的模型 ID，需支持图片输入",
+    apiKeyHint:"该服务商的 API Key",
+    hasModelSelect:false
+  }
+};
+var currentProvider="ark";
+try{var sp=localStorage.getItem("promptee_provider");if(sp&&providerConfig[sp])currentProvider=sp;}catch(e){}
 try{var modelConfig={
   "doubao-vision-pro-32k":{label:"Doubao-vision-pro-32k",endpointKey:"ark_ep_vp32k",endpointDefault:"ep-20260706162916-cwsp4",maxTokens:12288,timeout:60000},
   "doubao-seed-2.1-turbo":{label:"Seed2.1 Turbo",endpointKey:"ark_ep_seed21t",endpointDefault:"ep-20260708192217-zfkkf",maxTokens:8192,timeout:45000,thinkingTypeDisabled:true},
-  "doubao-seed-2.1-pro":{label:"Doubao Seed 2.1 Pro",endpointKey:"ark_ep_seed21",endpointDefault:"ep-20260707145037-qbhn8",maxTokens:4500,timeout:120000,thinkingTypeDisabled:true}
+  "doubao-seed-2.1-pro":{label:"Doubao Seed 2.1 Pro",endpointKey:"ark_ep_seed21",endpointDefault:"ep-20260707145037-qbhn8",maxTokens:4500,timeout:120000,thinkingTypeDisabled:true},
+  "custom":{label:"自定义模型",endpointKey:"custom_model",endpointDefault:"",maxTokens:4096,timeout:120000}
 };}catch(e){}
+if(currentProvider==="custom")currentModel="custom";
+function providerCfg(){return providerConfig[currentProvider]||providerConfig.ark;}
+function readLS(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function writeLS(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function currentModelCfg(){return modelConfig[currentModel]||modelConfig["doubao-seed-2.1-turbo"];}
+function saveProviderFields(){
+  var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
+  if(ae)writeLS(p.endpointStorageKey,ae.value.trim());
+  if(ak)writeLS(p.keyStorageKey,ak.value);
+  if(mn)writeLS(currentModelCfg().endpointKey,mn.value.trim());
+}
+function loadProviderFields(){
+  var p=providerCfg(),ae=document.getElementById("apiEndpoint"),ak=document.getElementById("apiKey"),mn=document.getElementById("modelName");
+  if(ae){var se=readLS(p.endpointStorageKey);ae.value=(se!==null&&se!=="")?se:p.defaultEndpoint;ae.placeholder=p.endpointPlaceholder;}
+  if(ak){var sk=readLS(p.keyStorageKey);ak.value=sk!==null?sk:"";}
+  if(mn){var mc=currentModelCfg(),sm=readLS(mc.endpointKey);mn.value=(sm!==null&&sm!=="")?sm:(mc.endpointDefault||"");}
+}
+function applyProviderUI(){
+  var p=providerCfg();
+  var ps=document.getElementById("providerSelect");if(ps)ps.value=currentProvider;
+  var sec=document.getElementById("modelSelectSection");if(sec)sec.style.display=p.hasModelSelect?"":"none";
+  var ml=document.getElementById("modelNameLabel");if(ml)ml.textContent=p.modelFieldLabel;
+  var mn=document.getElementById("modelName");if(mn)mn.placeholder=p.modelFieldPlaceholder;
+  var mh=document.getElementById("modelNameHint");if(mh)mh.textContent=p.modelFieldHint;
+  var kh=document.getElementById("apiKeyHint");if(kh)kh.textContent=p.apiKeyHint;
+}
+function setProvider(id){
+  if(!providerConfig[id]||id===currentProvider)return;
+  saveProviderFields();
+  currentProvider=id;
+  writeLS("promptee_provider",id);
+  currentModel=(id==="custom")?"custom":(readLS("ark_model_type")||"doubao-seed-2.1-turbo");
+  if(!modelConfig[currentModel])currentModel="doubao-seed-2.1-turbo";
+  var ms=document.getElementById("modelSelect");if(ms)ms.value=currentModel;
+  applyProviderUI();
+  loadProviderFields();
+  st("已切换到 "+providerConfig[id].label);
+}
 
 var mode="single";var replacementTarget="upper_clothing";var subjectRef=null;var envRef=null;var state={images:[],results:[],processing:false};
 var $=function(s){return document.querySelector(s);};
@@ -500,7 +568,7 @@ tplShoes.addEventListener("click",function(){currentTpl="shoes";tplShoes.classLi
 tplFullBody.addEventListener("click",function(){currentTpl="fullbody";tplFullBody.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBodyShoes.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyPromptData").value;});
  tplFullBodyShoes.addEventListener("click",function(){currentTpl="fullbodyShoes";tplFullBodyShoes.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplSingleShoe.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("fullbodyShoesPromptData").value;});
 function goDual(){mode="dual_reference";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.remove("active");if(md)md.classList.add("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="none";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="none";var du=document.getElementById("dualUploadArea");if(du)du.style.display="block";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="block";}function goSingle(){mode="single";var ms=document.getElementById("modeSingle");var md=document.getElementById("modeDual");if(ms)ms.classList.add("active");if(md)md.classList.remove("active");var dz=document.getElementById("dropzone");if(dz)dz.style.display="";var ig=document.getElementById("imageGrid");if(ig)ig.style.display="";var du=document.getElementById("dualUploadArea");if(du)du.style.display="none";var dh=document.getElementById("modeDualHint");if(dh)dh.style.display="none";}tplSingleShoe.addEventListener("click",function(){currentTpl="singleShoe";tplSingleShoe.classList.add("active");tplCustom.classList.remove("active");tplCoat.classList.remove("active");tplBottoms.classList.remove("active");tplShoes.classList.remove("active");tplFullBody.classList.remove("active");tplFullBodyShoes.classList.remove("active");genWordSection.style.display="none";promptPreview.value=document.getElementById("singleShoePromptData").value;});
-genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",function(){try{localStorage.setItem("ark_api_key",apiKey.value);}catch(e){}});apiEndpoint.addEventListener("input",function(){try{localStorage.setItem("ark_endpoint",apiEndpoint.value);}catch(e){}});modelName.addEventListener("input",function(){try{var k=modelConfig[currentModel].endpointKey;localStorage.setItem(k,modelName.value);}catch(e){}});compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();genWordSection.style.display="none";if(currentTpl==="custom"){promptPreview.value="";}
+genWordInput.addEventListener("input",updPrompt);apiKey.addEventListener("input",function(){writeLS(providerCfg().keyStorageKey,apiKey.value);});apiEndpoint.addEventListener("input",function(){writeLS(providerCfg().endpointStorageKey,apiEndpoint.value);});modelName.addEventListener("input",function(){writeLS(currentModelCfg().endpointKey,modelName.value);});compressToggle.addEventListener("change",function(){var cfg=document.getElementById("compressConfig");cfg.style.display=this.checked?"":"none";try{localStorage.setItem("compress_enabled",this.checked);}catch(e){}});maxDimension.addEventListener("change",function(){try{localStorage.setItem("compress_max_dim",this.value);}catch(e){}});try{var ce=localStorage.getItem("compress_enabled");if(ce!==null)document.getElementById("compressToggle").checked=ce==="true";var md=localStorage.getItem("compress_max_dim");if(md!==null)maxDimension.value=md;document.getElementById("compressConfig").style.display=document.getElementById("compressToggle").checked?"":"none";}catch(e){}updPrompt();genWordSection.style.display="none";if(currentTpl==="custom"){promptPreview.value="";}
 /* 批量模式需要接管粘贴目标，因此拦截旧的 paste 注册，统一由下方新逻辑处理 */
 
 function hf(files){
@@ -557,7 +625,7 @@ function deleteSelected(){var ids=Object.keys(selectedIds).filter(function(k){re
 function rm(id){
   var t1=[];for(var i=0;i<state.images.length;i++){if(state.images[i].id!==id)t1.push(state.images[i]);}state.images=t1;
   var t2=[];for(var j=0;j<state.results.length;j++){if(state.results[j].id!==id)t2.push(state.results[j]);}state.results=t2;
-  renderGrid();ui();saveResults();try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(ex){}try{var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;}catch(ex){}renderResults();
+  renderGrid();ui();saveResults();applyProviderUI();loadProviderFields();renderResults();
 }
 function ui(){
   startBtn.disabled=state.images.length===0||state.processing;
@@ -709,7 +777,7 @@ exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typ
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}try{var k=localStorage.getItem("ark_api_key");if(k)apiKey.value=k;var e=localStorage.getItem("ark_endpoint");if(e)apiEndpoint.value=e;}catch(e){}document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.value=currentModel;var epKey=modelConfig[currentModel].endpointKey;var saved=localStorage.getItem(epKey);document.getElementById("modelName").value=saved||modelConfig[currentModel].endpointDefault;ms.addEventListener("change",function(){currentModel=this.value;try{localStorage.setItem("ark_model_type",currentModel);}catch(e){}var epKey2=modelConfig[currentModel].endpointKey;var saved2=localStorage.getItem(epKey2);document.getElementById("modelName").value=saved2||modelConfig[currentModel].endpointDefault;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.value=currentProvider;psEl.addEventListener("change",function(){setProvider(this.value);});}applyProviderUI();loadProviderFields();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
 var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
