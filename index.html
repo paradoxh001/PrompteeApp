@@ -65,6 +65,19 @@ body{display:flex;flex-direction:column}
 .cfg-del:hover{background:rgba(255,107,107,.14)}
 .cfg-done{padding:7px 18px;border-radius:8px;border:none;background:linear-gradient(90deg,#fff600,#ffe300);color:#1d1d1f;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
 .cfg-done:hover{filter:brightness(.96)}
+.cfg-io{display:none;border-top:1px solid rgba(255,255,255,.08);padding:12px 18px;background:rgba(0,0,0,.18)}
+.cfg-io-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cfg-io-head .t{font-size:12px;font-weight:600;color:rgba(255,255,255,.85)}
+.cfg-io-warn{font-size:10px;color:#ffb340}
+.cfg-io textarea{width:100%;height:120px;resize:vertical;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:rgba(255,255,255,.88);font-family:Menlo,Consolas,monospace;font-size:11px;line-height:1.5;padding:8px 10px;outline:none;word-break:break-all}
+.cfg-io-replace{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);margin-bottom:8px;cursor:pointer}
+.cfg-io-replace input{cursor:pointer}
+.cfg-io-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.cfg-io-btn{padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:rgba(255,255,255,.82);font-size:12px;font-family:inherit;cursor:pointer;transition:.2s}
+.cfg-io-btn:hover{border-color:rgba(255,255,255,.36);color:#fff}
+.cfg-io-btn.primary{border-color:rgba(0,132,255,.6);background:rgba(0,132,255,.18);color:#fff}
+.cfg-io-open{padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.78);font-size:12px;font-family:inherit;cursor:pointer;transition:.2s}
+.cfg-io-open:hover{border-color:rgba(255,255,255,.38);color:#fff}
 @media(max-width:720px){.cfg-wrap{flex-direction:column}.cfg-side{width:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.08);max-height:180px}}
 .section{margin-bottom:20px}
 .section:last-child{margin-bottom:0}
@@ -523,7 +536,9 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 
 </div>
 </div>
-<div class="cfg-foot"><button class="cfg-del" id="profileDelBtn" type="button">删除此配置</button><button class="cfg-done" id="cfgDoneBtn" type="button">完成</button></div>
+<div class="cfg-io" id="cfgIoPanel"><div class="cfg-io-head"><span class="t" id="cfgIoTitle">导出配置</span><span class="cfg-io-warn">内容包含 API Key 明文，请勿公开分享</span></div><label class="cfg-io-replace" id="cfgIoReplaceRow" style="display:none"><input type="checkbox" id="cfgIoReplace" /> 替换现有全部配置（不勾选则追加）</label>
+<textarea id="cfgIoText" spellcheck="false" placeholder="在此粘贴配置 JSON"></textarea><div class="cfg-io-actions"><button class="cfg-io-btn" id="cfgIoCopyBtn" type="button">复制</button><button class="cfg-io-btn primary" id="cfgIoImportBtn" type="button">导入</button><button class="cfg-io-btn" id="cfgIoCloseBtn" type="button">关闭</button></div></div>
+<div class="cfg-foot"><button class="cfg-del" id="profileDelBtn" type="button">删除此配置</button><div style="display:flex;gap:8px"><button class="cfg-io-open" id="cfgExportBtn" type="button">导出配置</button><button class="cfg-io-open" id="cfgImportBtn" type="button">导入配置</button><button class="cfg-done" id="cfgDoneBtn" type="button">完成</button></div></div>
 </div>
 </div>
 <div class="modal-overlay" id="modalOverlay"><div class="modal-card"><div class="modal-header"><span class="title" id="modalTitle"></span><div class="modal-actions"><button class="modal-btn primary" onclick="copyModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 复制</button><button class="modal-btn ghost" onclick="closeModal()">✕</button></div></div><div class="modal-body" id="modalBody"></div></div></div>
@@ -724,6 +739,84 @@ function st(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);
 var cfgOverlayEl=$("#cfgOverlay");
 function openCfg(){var o=document.getElementById("cfgOverlay");if(o)o.style.display="flex";renderProfileSelect();}
 function closeCfg(){var o=document.getElementById("cfgOverlay");if(o)o.style.display="none";}
+function cfgIoOpen(mode){
+  var panel=document.getElementById("cfgIoPanel"),ta=document.getElementById("cfgIoText"),ti=document.getElementById("cfgIoTitle");
+  if(!panel)return;
+  panel.style.display="block";
+  var cp=document.getElementById("cfgIoCopyBtn"),ib=document.getElementById("cfgIoImportBtn");
+  if(mode==="export"){
+    if(ti)ti.textContent="导出配置（含全部档案）";
+    if(cp)cp.style.display="";
+    if(ib)ib.style.display="none";
+    var rr2=document.getElementById("cfgIoReplaceRow");if(rr2)rr2.style.display="none";
+    if(ta){ta.value=buildExportJson();ta.focus();ta.select();}
+  }else{
+    if(ti)ti.textContent="导入配置（粘贴 JSON 后点导入）";
+    if(cp)cp.style.display="none";
+    if(ib)ib.style.display="";
+    var rr=document.getElementById("cfgIoReplaceRow");if(rr)rr.style.display="flex";
+    var rc=document.getElementById("cfgIoReplace");if(rc)rc.checked=false;
+    if(ta){ta.value="";ta.focus();}
+  }
+}
+function cfgIoClose(){var p=document.getElementById("cfgIoPanel");if(p)p.style.display="none";}
+function buildExportJson(){
+  saveActiveProfile();
+  return JSON.stringify({app:"promptee",type:"api-config",version:1,exportedAt:new Date().toISOString(),profiles:vault.profiles},null,2);
+}
+function copyCfgIoText(){
+  var ta=document.getElementById("cfgIoText");if(!ta||!ta.value){st("没有可复制的内容");return;}
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){st("配置已复制到剪贴板，注意含明文 Key");},function(){ta.focus();ta.select();st("已选中，请按 Ctrl+C 复制");});
+      return;
+    }
+  }catch(e){}
+  ta.focus();ta.select();st("已选中，请按 Ctrl+C 复制");
+}
+function sanitizeImportedProfile(raw){
+  if(!raw||typeof raw!=="object")return null;
+  var provider=(raw.provider==="ark")?"ark":"custom";
+  var out={id:"",name:String(raw.name||"导入配置").slice(0,60),provider:provider,
+    endpoint:String(raw.endpoint||""),key:String(raw.key||""),useProxy:(raw.useProxy!==false)};
+  if(provider==="ark"){
+    out.authStyle="bearer";
+    out.arkModel=(raw.arkModel&&modelConfig[raw.arkModel])?raw.arkModel:"doubao-seed-2.1-turbo";
+    out.arkEps={};
+    if(raw.arkEps&&typeof raw.arkEps==="object"){for(var k in raw.arkEps){if(modelConfig[k])out.arkEps[k]=String(raw.arkEps[k]||"");}}
+  }else{
+    out.authStyle=(raw.authStyle==="bearer"||raw.authStyle==="x-api-key"||raw.authStyle==="api-key")?raw.authStyle:"api-key";
+    out.model=String(raw.model||"");
+  }
+  return out;
+}
+function importCfgIoText(){
+  var ta=document.getElementById("cfgIoText");if(!ta)return;
+  var raw=ta.value.trim();
+  if(!raw){st("请先粘贴配置 JSON");return;}
+  var data=null;
+  try{data=JSON.parse(raw);}catch(e){st("JSON 解析失败，请检查内容是否完整");return;}
+  var list=(data&&Array.isArray(data.profiles))?data.profiles:(Array.isArray(data)?data:null);
+  if(!list||!list.length){st("未找到可导入的配置档案");return;}
+  saveActiveProfile();
+  var replaceEl=document.getElementById("cfgIoReplace"),replace=!!(replaceEl&&replaceEl.checked);
+  var existing=replace?[]:vault.profiles.slice();
+  var used={};
+  for(var i=0;i<existing.length;i++){used[existing[i].name]=true;}
+  var added=[];
+  for(var k=0;k<list.length;k++){
+    var p=sanitizeImportedProfile(list[k]);if(!p)continue;
+    var base=p.name,n=2;
+    while(used[p.name]){p.name=base+"（"+n+"）";n++;}
+    used[p.name]=true;p.id=newPid();
+    added.push(p);
+  }
+  if(!added.length){st("没有可导入的有效配置");return;}
+  vault.profiles=existing.concat(added);
+  vault.active=added[0].id;
+  persistVault();renderProfileSelect();applyActiveProfile();cfgIoClose();
+  st("已导入 "+added.length+" 个配置"+(replace?"（已替换原有配置）":""));
+}
 if(!apiKey.value.trim()){var h0=document.getElementById("cfgHint");if(h0)h0.style.display="flex";}
 function updPrompt(){
   var w=genWordInput.value.trim()||"上衣：图中的上衣";
@@ -989,7 +1082,7 @@ exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typ
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
 clearAllBtn.addEventListener("click",function(){if(state.processing)return;selectedIds={};try{localStorage.removeItem("promptee_results");}catch(e){}state.images=[];state.results=[];renderGrid();renderResults();rightFooter.style.display="none";updP(0,0,"");ui();st("已全部清空");});
 function fd(){var d=new Date();function pad(n){return String(n).padStart(2,"0");}return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
-try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.addEventListener("change",function(){var pr=activeProfile();if(pr.provider!=="ark")return;var mn=document.getElementById("modelName");if(mn){pr.arkEps=pr.arkEps||{};pr.arkEps[pr.arkModel||currentModel]=mn.value.trim();}pr.arkModel=this.value;currentModel=this.value;persistVault();var ep=(pr.arkEps||{})[currentModel]||(modelConfig[currentModel]||{}).endpointDefault||"";if(mn)mn.value=ep;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.addEventListener("change",function(){setProviderType(this.value);});}var pAddBtn=document.getElementById("cfgAddBtn");if(pAddBtn)pAddBtn.addEventListener("click",function(){addProfile(activeProfile().provider);});var cfgOpenBtnEl=document.getElementById("cfgOpenBtn");if(cfgOpenBtnEl)cfgOpenBtnEl.addEventListener("click",openCfg);var cfgCloseBtnEl=document.getElementById("cfgCloseBtn");if(cfgCloseBtnEl)cfgCloseBtnEl.addEventListener("click",closeCfg);var cfgDoneBtnEl=document.getElementById("cfgDoneBtn");if(cfgDoneBtnEl)cfgDoneBtnEl.addEventListener("click",closeCfg);if(cfgOverlayEl)cfgOverlayEl.addEventListener("click",function(e){if(e.target===this)closeCfg();});document.addEventListener("keydown",function(e){if(e.key==="Escape")closeCfg();});var pDelBtn=document.getElementById("profileDelBtn");if(pDelBtn)pDelBtn.addEventListener("click",deleteProfile);var pNameEl=document.getElementById("profileName");if(pNameEl)pNameEl.addEventListener("input",function(){renameProfile(this.value);});var tcBtnEl=document.getElementById("testConnBtn");if(tcBtnEl)tcBtnEl.addEventListener("click",testConnection);var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",saveActiveProfile);var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",saveActiveProfile);renderProfileSelect();applyActiveProfile();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
+try{document.getElementById("selectAllCheck").addEventListener("change",function(){var chk=this.checked;for(var i=0;i<state.images.length;i++){var id=state.images[i].id;if(chk){selectedIds[id]=true;}else{delete selectedIds[id];}}updateSelection();});document.getElementById("deleteSelectedBtn").addEventListener("click",deleteSelected);}catch(e){}var ms=document.getElementById("modelSelect");if(ms){ms.addEventListener("change",function(){var pr=activeProfile();if(pr.provider!=="ark")return;var mn=document.getElementById("modelName");if(mn){pr.arkEps=pr.arkEps||{};pr.arkEps[pr.arkModel||currentModel]=mn.value.trim();}pr.arkModel=this.value;currentModel=this.value;persistVault();var ep=(pr.arkEps||{})[currentModel]||(modelConfig[currentModel]||{}).endpointDefault||"";if(mn)mn.value=ep;});}var psEl=document.getElementById("providerSelect");if(psEl){psEl.addEventListener("change",function(){setProviderType(this.value);});}var pAddBtn=document.getElementById("cfgAddBtn");if(pAddBtn)pAddBtn.addEventListener("click",function(){addProfile(activeProfile().provider);});var cfgOpenBtnEl=document.getElementById("cfgOpenBtn");if(cfgOpenBtnEl)cfgOpenBtnEl.addEventListener("click",openCfg);var cfgExpBtn=document.getElementById("cfgExportBtn");if(cfgExpBtn)cfgExpBtn.addEventListener("click",function(){cfgIoOpen("export");});var cfgImpBtn=document.getElementById("cfgImportBtn");if(cfgImpBtn)cfgImpBtn.addEventListener("click",function(){cfgIoOpen("import");});var cfgIoCopyEl=document.getElementById("cfgIoCopyBtn");if(cfgIoCopyEl)cfgIoCopyEl.addEventListener("click",copyCfgIoText);var cfgIoImpEl=document.getElementById("cfgIoImportBtn");if(cfgIoImpEl)cfgIoImpEl.addEventListener("click",importCfgIoText);var cfgIoCloseEl=document.getElementById("cfgIoCloseBtn");if(cfgIoCloseEl)cfgIoCloseEl.addEventListener("click",cfgIoClose);var cfgCloseBtnEl=document.getElementById("cfgCloseBtn");if(cfgCloseBtnEl)cfgCloseBtnEl.addEventListener("click",closeCfg);var cfgDoneBtnEl=document.getElementById("cfgDoneBtn");if(cfgDoneBtnEl)cfgDoneBtnEl.addEventListener("click",closeCfg);if(cfgOverlayEl)cfgOverlayEl.addEventListener("click",function(e){if(e.target===this)closeCfg();});document.addEventListener("keydown",function(e){if(e.key==="Escape")closeCfg();});var pDelBtn=document.getElementById("profileDelBtn");if(pDelBtn)pDelBtn.addEventListener("click",deleteProfile);var pNameEl=document.getElementById("profileName");if(pNameEl)pNameEl.addEventListener("input",function(){renameProfile(this.value);});var tcBtnEl=document.getElementById("testConnBtn");if(tcBtnEl)tcBtnEl.addEventListener("click",testConnection);var ptEl=document.getElementById("useProxyToggle");if(ptEl)ptEl.addEventListener("change",saveActiveProfile);var asEl=document.getElementById("authStyleSelect");if(asEl)asEl.addEventListener("change",saveActiveProfile);renderProfileSelect();applyActiveProfile();document.getElementById("modeSingleRadio").addEventListener("change",function(){if(this.checked)mode="single";});document.getElementById("modeDualRadio").addEventListener("change",function(){if(this.checked)mode="dual_reference";});renderResults();ui();loadResults();
 /* ========== 双图融合批量模式 ========== */
 var dualBatchMode="pair",subjectRefs=[],envRefs=[],subjectSeq=0,envSeq=0;
 var batchPairBtn=document.getElementById("batchPairBtn"),batchEnvBtn=document.getElementById("batchEnvBtn"),batchSubjBtn=document.getElementById("batchSubjBtn");
