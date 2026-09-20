@@ -673,12 +673,12 @@ function pae(st,bd,mv){
 }
 async function testConnection(){
   var ep=apiEndpoint.value.trim(),key=apiKey.value.trim(),model=modelName.value.trim();
-  var out=document.getElementById("testConnResult"),btn=document.getElementById("testConnBtn");
+  var out=document.getElementById("testConnResult"),btn=document.getElementById("testConnBtn");var BR=String.fromCharCode(10);
   function show(msg,cls){if(out){out.className="test-conn-result"+(cls?" "+cls:"");out.textContent=msg;}}
   if(!ep||!key||!model){show("请先填写 API 地址、API Key 和模型标识","err");return;}
   var useProxy=effectiveViaProxy(),authStyle=effectiveAuthStyle();
   var route=useProxy?"代理转发":"直连";
-  var body={model:model,messages:[{role:"user",content:"ping"}],max_tokens:8,stream:false};
+  var body={model:model,messages:[{role:"user",content:"ping"}],max_tokens:128,stream:false};
   var url=ep,headers={"Content-Type":"application/json"};
   if(useProxy){body.api_key=key;body.target_url=ep;body.auth_style=authStyle;url="/api/chat";}
   else{var ah=authHeaderFor(authStyle);headers[ah.name]=ah.value(key);}
@@ -692,10 +692,10 @@ async function testConnection(){
     var ms=Date.now()-t0,txt=await resp.text(),j=null;
     try{j=JSON.parse(txt);}catch(e){}
     if(resp.ok){
-      var cnt=j&&j.choices&&j.choices[0]&&(j.choices[0].message||j.choices[0].delta)&&(j.choices[0].message||j.choices[0].delta).content;
+      var ch=j&&j.choices&&j.choices[0];var msg=ch&&(ch.message||ch.delta);var cnt=msg?msg.content:undefined;var rc=msg&&(msg.reasoning_content||msg.reasoning);var fin=ch?ch.finish_reason:"";
       var tk=j&&j.usage&&j.usage.total_tokens;
-      if(cnt!=null&&cnt!=="")show("连接正常（"+route+"，"+(ms/1000).toFixed(1)+"s）。模型已返回内容"+(tk?("，用量 "+tk+" tokens"):""),"ok");
-      else show("已连通（"+route+"，"+(ms/1000).toFixed(1)+"s），但响应不是标准 chat/completions 结构，请确认地址指向的是对话补全接口"+"\n"+"响应片段: "+String(txt).slice(0,200),"warn");
+      if(!ch||typeof cnt!=="string"){show("已连通（"+route+"，"+(ms/1000).toFixed(1)+"s），但响应缺少 choices[0].message，不像是对话补全接口"+BR+"响应片段: "+String(txt).slice(0,200),"warn");}else if(cnt!==""){show("连接正常（"+route+"，"+(ms/1000).toFixed(1)+"s）。模型已返回内容"+(tk?("，用量 "+tk+" tokens"):""),"ok");}else{var ex=[];if(fin)ex.push("finish_reason="+fin);if(rc)ex.push("有 reasoning_content 但 content 为空");if(tk)ex.push("用量 "+tk+" tokens");show("连接正常（"+route+"，"+(ms/1000).toFixed(1)+"s）。地址、鉴权、接口都通，仅这次返回内容为空"+(ex.length?("（"+ex.join("，")+"）"):"")+BR+"常见原因：max_tokens 被推理过程占满，或该模型需要更长输出。真实生成会用模型配置里的 maxTokens，比测试用的 128 更宽松。","warn");}
+
     }else{
       var pb=j||(txt?{error:String(txt).slice(0,300)}:null);
       show("连接失败（"+route+"，HTTP "+resp.status+"）"+"\n"+pae(resp.status,pb,model),"err");
