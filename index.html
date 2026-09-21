@@ -546,7 +546,8 @@ label[id="modeSingle"],label[id="modeDual"]{padding:8px 16px!important;font-size
 </div>
 </div>
 <div class="modal-overlay" id="modalOverlay"><div class="modal-card"><div class="modal-header"><span class="title" id="modalTitle"></span><div class="modal-actions"><button class="modal-btn primary" onclick="copyModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 复制</button><button class="modal-btn ghost" onclick="closeModal()">✕</button></div></div><div class="modal-body" id="modalBody"></div></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script><script>
 
 var currentModel;try{currentModel=localStorage.getItem("ark_model_type");}catch(e){}currentModel=currentModel||"doubao-seed-2.1-turbo";
 var providerConfig={
@@ -1083,11 +1084,54 @@ function exportCSV(){
   var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});var url=URL.createObjectURL(blob);var aE=document.createElement("a");aE.href=url;aE.download="生成结果_"+fd()+".csv";document.body.appendChild(aE);aE.click();document.body.removeChild(aE);URL.revokeObjectURL(url);st("CSV 已导出");
 }
 exportCsvBtn.addEventListener("click",exportCSV);
-function exportExcel(){
-  if(typeof XLSX==="undefined"){st("XLSX 库尚未加载");return;}
-  var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}if(!a.length){st("没有可导出的结果");return;}
+function exportExcelLegacy(a){
+  if(typeof XLSX==="undefined"){st("Excel 库尚未加载，请检查网络后重试");return;}
   var data=[];for(var i=0;i<a.length;i++){var o={};o["序号"]=i+1;o["文件名"]=a[i].fileName;o["生成结果"]=a[i].result;o["状态"]=a[i].status==="done"?"完成":"失败";data.push(o);}
-  var wb=XLSX.utils.book_new();var ws=XLSX.utils.json_to_sheet(data);ws["!cols"]=[{wch:6},{wch:30},{wch:80},{wch:10}];XLSX.utils.book_append_sheet(wb,ws,"生成结果");XLSX.writeFile(wb,"生成结果_"+fd()+".xlsx");st("Excel 已导出");
+  var wb=XLSX.utils.book_new();var ws=XLSX.utils.json_to_sheet(data);ws["!cols"]=[{wch:6},{wch:30},{wch:80},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,"生成结果");XLSX.writeFile(wb,"生成结果_"+fd()+".xlsx");
+  st("已导出（图片库未加载，本次无预览）");
+}
+function exportExcel(){
+  var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}
+  if(!a.length){st("没有可导出的结果");return;}
+  if(typeof ExcelJS==="undefined"){exportExcelLegacy(a);return;}
+  try{
+    var hasEnv=false;for(var e=0;e<a.length;e++){if(a[e].envDataUrl)hasEnv=true;}
+    var wb=new ExcelJS.Workbook();
+    var ws=wb.addWorksheet("生成结果");
+    ws.columns=[
+      {header:"序号",key:"no",width:6},
+      {header:"预览",key:"thumb",width:hasEnv?30:15.5},
+      {header:"文件名",key:"name",width:34},
+      {header:"生成结果",key:"result",width:80},
+      {header:"状态",key:"status",width:10}
+    ];
+    ws.getRow(1).font={bold:true};
+    ws.getRow(1).alignment={vertical:"middle"};
+    ws.getRow(1).height=20;
+    var IMG_W=96,IMG_H=96,ROW_H=74;
+    for(var i=0;i<a.length;i++){
+      var r=a[i];
+      var row=ws.addRow({no:i+1,thumb:"",name:r.fileName,result:r.result,status:r.status==="done"?"完成":"失败"});
+      row.alignment={vertical:"top",wrapText:true};
+      row.height=ROW_H;
+      var imgs=[];if(r.dataUrl)imgs.push(r.dataUrl);if(r.envDataUrl)imgs.push(r.envDataUrl);
+      for(var k=0;k<imgs.length;k++){
+        var m=/^data:image\/(\w+);base64,(.+)$/.exec(imgs[k]);
+        if(!m)continue;
+        var ext=m[1].toLowerCase();if(ext==="jpeg")ext="jpg";
+        var id=wb.addImage({base64:imgs[k],extension:ext});
+        ws.addImage(id,{tl:{col:1+0.03+k*0.94,row:row.number-1+0.06},ext:{width:IMG_W,height:IMG_H},editAs:"oneCell"});
+      }
+    }
+    wb.xlsx.writeBuffer().then(function(buf){
+      var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      var url=URL.createObjectURL(blob);
+      var el=document.createElement("a");el.href=url;el.download="生成结果_"+fd()+".xlsx";
+      document.body.appendChild(el);el.click();document.body.removeChild(el);URL.revokeObjectURL(url);
+      st("Excel 已导出（含图片预览）");
+    },function(err){st("导出失败："+(err&&err.message?err.message:"未知错误"));});
+  }catch(e){ st("导出失败："+(e&&e.message?e.message:"未知错误")); }
 }
 exportExcelBtn.addEventListener("click",exportExcel);function exportZIP(){if(typeof JSZip==="undefined"){st("JSZip 库尚未加载");return;}var a=[];for(var i=0;i<state.results.length;i++){if(state.results[i].status==="done"||state.results[i].status==="error")a.push(state.results[i]);}if(!a.length){st("没有可导出的结果");return;}var zip=new JSZip();var ok=0;for(var i=0;i<a.length;i++){var r=a[i];var bn=r.fileName.replace(/\.[^.]+$/,"")||"image_"+i;zip.file(bn+".json",r.result||"");if(r.dataUrl){var m=r.dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);if(m){var e=m[1];if(e==="jpeg")e="jpg";zip.file(bn+"."+e,m[2],{base64:true});}}ok++;}zip.generateAsync({type:"blob"}).then(function(b){var u=URL.createObjectURL(b);var aE=document.createElement("a");aE.href=u;aE.download="promptee_"+fd()+".zip";document.body.appendChild(aE);aE.click();document.body.removeChild(aE);URL.revokeObjectURL(u);st("ZIP 已导出（"+ok+" 条）");});}exportZipBtn.addEventListener("click",exportZIP);
 clearResultsBtn.addEventListener("click",function(){if(state.processing)return;try{localStorage.removeItem("promptee_results");}catch(e){}state.results=[];renderResults();rightFooter.style.display="none";updP(0,0,"");st("结果已清空");});
