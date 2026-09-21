@@ -1,6 +1,8 @@
-﻿node_modules/
+node_modules/
 .git/
 *.log
 server_err.txt
 server_out.txt
 .DS_Store
+server_err2.txt
+server.log
